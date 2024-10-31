@@ -28,7 +28,7 @@ const useAbly = (apiKey) => {
     const sendMessage = async (message) => {
         if (channel) {
             console.log(JSON.stringify({ 'role': 'user', 'content': message }))
-          await fetch(SEND_MESSAGE_URL, {
+          await fetch("https://mockaibackend.vercel.app/send", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
