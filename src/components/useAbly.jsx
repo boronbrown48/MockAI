@@ -9,8 +9,8 @@ const useAbly = (apiKey) => {
     const [inputMessage, setInputMessage] = useState('');
 
     useEffect(() => {
-        const ably = new Ably.Realtime(apiKey);
-        const chatChannel = ably.channels.get(CHANNEL_NAME);
+        const ably = new Ably.Realtime("iyQ8_g.iH_Akw:gBcPCX3_ql6bHz5-9ns4CAA3KuK_kRVd-lNpvNYalbk");
+        const chatChannel = ably.channels.get("transcription_receiver");
 
         chatChannel.subscribe('message', (message) => {
             console.log("REC Messages:", message);
