@@ -43,7 +43,7 @@ export default function Landing({ setIsAuthenticated }) {
 
   const navigate = useNavigate();
 
-  const BASE_URL = process.env.VITE_SERVER_URL;
+  const BASE_URL = "https://mockaibackend.vercel.app";
 
   const handleFileChange = async (event) => {
     const selectedFile = event.target.files[0];

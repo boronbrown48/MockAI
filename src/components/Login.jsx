@@ -15,7 +15,7 @@ export default function Login({ setIsAuthenticated }) {
 
   const navigate = useNavigate();
 
-  const BASE_URL = process.env.VITE_SERVER_URL;
+  const BASE_URL = "https://mockaibackend.vercel.app";
 
   const handleSubmit = async (event) => {
     event.preventDefault();

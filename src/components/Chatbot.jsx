@@ -109,8 +109,8 @@ const MessageContainer = styled(Box)(({ theme }) => ({
 }));
 
 const Chatbot = ({ setIsAuthenticated }) => {
-    const ABLY_API_KEY = process.env.VITE_ABLY_API_KEY;
-    const BASE_URL = process.env.VITE_SERVER_URL;
+    const ABLY_API_KEY = "iyQ8_g.iH_Akw:gBcPCX3_ql6bHz5-9ns4CAA3KuK_kRVd-lNpvNYalbk";
+    const BASE_URL = "https://mockaibackend.vercel.app";
     const messagesEndRef = useRef(null);
     const { messages,
         inputMessage,

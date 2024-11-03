@@ -13,7 +13,7 @@ const ScreenRecorder = () => {
   const chunks = useRef([]);
   const isProcessing = useRef(false);
 
-  const BASE_URL = process.env.VITE_SERVER_URL;
+  const BASE_URL = "https://mockaibackend.vercel.app";
 
   // Configuration for silence detection
   const SILENCE_THRESHOLD = -60; // dB (adjusted for testing)

@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import Ably from 'ably';
 
 const useAbly = (apiKey) => {
-    const CHANNEL_NAME = process.env.VITE_CHANNEL_NAME;
-    const BASE_URL = process.env.VITE_SERVER_URL;
-    const ABLY_API = process.env.VITE_ABLY_API_KEY;
+    const CHANNEL_NAME = "transcription_receiver";
+    const BASE_URL = "https://mockaibackend.vercel.app";
+    const ABLY_API = "iyQ8_g.iH_Akw:gBcPCX3_ql6bHz5-9ns4CAA3KuK_kRVd-lNpvNYalbk";
     const CLIENT_ID = localStorage.getItem("client_id");
     const resumeData = localStorage.getItem("resumeData");
     const jdData = localStorage.getItem("jdData");
