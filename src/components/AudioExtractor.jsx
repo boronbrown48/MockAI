@@ -2,7 +2,7 @@ import audioBufferToWav from 'audiobuffer-to-wav';
 import Groq from 'groq-sdk';
 
 const apiKey = import.meta.env.VITE_GROQ_API_KEY;
-const groq = new Groq({ apiKey: "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", dangerouslyAllowBrowser: true });
+const groq = new Groq({ apiKey: apiKey, dangerouslyAllowBrowser: true });
 
 export const transcribeAudioFile = async (file) => {
     if (!file) throw new Error('No file provided');
@@ -21,7 +21,7 @@ export const transcribeAudioFile = async (file) => {
 
                 // Create an OfflineAudioContext with the correct length
                 const offlineAudioContext = new OfflineAudioContext(1, sampleRate * duration, sampleRate);
-                
+
                 // Create a buffer source
                 const soundSource = offlineAudioContext.createBufferSource();
                 soundSource.buffer = decodedAudioData;
@@ -44,7 +44,7 @@ export const transcribeAudioFile = async (file) => {
 
                 // Render the audio
                 const renderedBuffer = await offlineAudioContext.startRendering();
-                
+
                 // Convert to WAV
                 const wavData = audioBufferToWav(renderedBuffer);
                 const wavBlob = new Blob([wavData], { type: 'audio/wav' });

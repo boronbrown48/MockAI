@@ -12,14 +12,16 @@ const ScreenRecorder = () => {
   const silenceTimeout = useRef(null);
   const chunks = useRef([]);
   const isProcessing = useRef(false);
-  
+
+  const BASE_URL = import.meta.env.VITE_SERVER_URL;
+
   // Configuration for silence detection
   const SILENCE_THRESHOLD = -60; // dB (adjusted for testing)
-  const SILENCE_DURATION = 1000; // ms to consider as silence
+  const SILENCE_DURATION = 2000; // ms to consider as silence
   const CHECK_INTERVAL = 100; // ms between checks
 
   const startRecording = async () => {
-    
+
     try {
       // Request screen capture with audio
       const screenStream = await navigator.mediaDevices.getDisplayMedia({
@@ -139,7 +141,7 @@ const ScreenRecorder = () => {
     const handleSilence = async () => {
       if (isNowSilent) {
         mediaRecorder.current.stop();
-        if(chunks.current.length) {
+        if (chunks.current.length) {
           console.log("Silence detected, sending chunks...");
           await sendCurrentChunks();
         }
@@ -151,7 +153,7 @@ const ScreenRecorder = () => {
         }
       }
     };
-  
+
     handleSilence();
   }, [isNowSilent]);
 
@@ -175,7 +177,7 @@ const ScreenRecorder = () => {
 
       console.log("Preparing to send", chunksToSend.length, "chunks...");
 
-      const response = await fetch('http://127.0.0.1:8000/upload-video/', {
+      const response = await fetch(BASE_URL + '/upload-video/', {
         method: 'POST',
         body: formData,
         headers: {
@@ -206,11 +208,10 @@ const ScreenRecorder = () => {
         <div className="flex justify-center space-x-4">
           <button
             onClick={isRecording ? stopRecording : startRecording}
-            className={`flex items-center px-4 py-2 rounded-lg ${
-              isRecording 
-                ? 'bg-red-500 hover:bg-red-600' 
-                : 'bg-blue-500 hover:bg-blue-600'
-            } text-white transition-colors`}
+            className={`flex items-center px-4 py-2 rounded-lg ${isRecording
+              ? 'bg-red-500 hover:bg-red-600'
+              : 'bg-blue-500 hover:bg-blue-600'
+              } text-white transition-colors`}
           >
             {isRecording ? (
               <>
