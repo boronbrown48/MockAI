@@ -110,6 +110,7 @@ const MessageContainer = styled(Box)(({ theme }) => ({
 
 const Chatbot = ({ setIsAuthenticated }) => {
     const ABLY_API_KEY = import.meta.env.VITE_ABLY_API_KEY;
+    const BASE_URL = import.meta.env.VITE_SERVER_URL;
     const messagesEndRef = useRef(null);
     const { messages,
         inputMessage,
@@ -124,6 +125,20 @@ const Chatbot = ({ setIsAuthenticated }) => {
     };
 
     const { isRecording, startRecording, stopRecording, error } = useScreenRecorder(onTranscriptionReceived);
+
+    // Load messages from local storage on mount
+    useEffect(() => {
+        const savedMessages = JSON.parse(localStorage.getItem('chatMessages')) || [];
+        // Only update if no messages exist
+        if (messages.length === 0) {
+            messages.push(...savedMessages);
+        }
+    }, [messages]);
+
+    // Save messages to local storage whenever they change
+    useEffect(() => {
+        localStorage.setItem('chatMessages', JSON.stringify(messages));
+    }, [messages]);
 
     const handleSendMessage = async () => {
         if (!inputMessage.trim()) return;

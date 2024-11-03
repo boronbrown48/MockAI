@@ -13,34 +13,34 @@ import { Google } from '@mui/icons-material';
 const items = [
   {
     icon: <SettingsSuggestRoundedIcon sx={{ color: 'text.secondary' }} />,
-    title: 'Adaptable performance',
+    title: 'Candidate\'s Resume',
     description:
-      'Our product effortlessly adjusts to your needs, boosting efficiency and simplifying your tasks.',
+      'Please upload candidate to train the AI further to get accurate answers',
   },
   {
     icon: <ConstructionRoundedIcon sx={{ color: 'text.secondary' }} />,
-    title: 'Built to last',
+    title: 'Let the AI analyse',
     description:
-      'Experience unmatched durability that goes above and beyond with lasting investment.',
+      'Let the AI analyse the resume before uploading the Job Description',
   },
   {
     icon: <ThumbUpAltRoundedIcon sx={{ color: 'text.secondary' }} />,
-    title: 'Great user experience',
+    title: 'Upload Job Description',
     description:
-      'Integrate our product into your routine with an intuitive and easy-to-use interface.',
+      'Please upload the Job Description for the upcoming Interview for tailored answers',
   },
   {
     icon: <AutoFixHighRoundedIcon sx={{ color: 'text.secondary' }} />,
-    title: 'Innovative functionality',
+    title: 'Start the Intervieww',
     description:
-      'Stay ahead with features that set new standards, addressing your evolving needs better than the rest.',
+      'Once files are uploaded AI is ready to start',
   },
 ];
 
 export default function LandingContent() {
   return (
     <Stack
-      sx={{ flexDirection: 'column', alignSelf: 'top', gap: 4, maxWidth: 600 , marginRight: 5}}
+      sx={{ flexDirection: 'column', alignSelf: 'top', gap: 4, maxWidth: 600, marginRight: 5 }}
     >
       <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
         <Google />

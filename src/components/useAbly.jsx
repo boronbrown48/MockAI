@@ -6,6 +6,8 @@ const useAbly = (apiKey) => {
     const BASE_URL = import.meta.env.VITE_SERVER_URL;
     const ABLY_API = import.meta.env.VITE_ABLY_API_KEY;
     const CLIENT_ID = localStorage.getItem("client_id");
+    const resumeData = localStorage.getItem("resumeData");
+    const jdData = localStorage.getItem("jdData");
 
     const [messages, setMessages] = useState([]);
     const [channel, setChannel] = useState(null);
@@ -36,7 +38,13 @@ const useAbly = (apiKey) => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ 'role': 'user', 'content': message, 'client_id': CLIENT_ID }),
+                body: JSON.stringify({
+                    'role': 'user',
+                    'content': message,
+                    'client_id': CLIENT_ID,
+                    'resume': resumeData,
+                    'jd': jdData
+                }),
             });
             setInputMessage('');
         }

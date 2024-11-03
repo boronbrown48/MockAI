@@ -167,6 +167,8 @@ export default function Landing({ setIsAuthenticated }) {
     } finally {
       setLoading(false); // Reset loading state when done
     }
+    // setIsAuthenticated(true);
+    // navigate('/chat');
   };
 
   const handleLogout = async () => {
@@ -369,7 +371,7 @@ export default function Landing({ setIsAuthenticated }) {
                 )}
 
                 <Button variant="contained" color="primary" sx={{ mt: 5 }} onClick={handleSubmit} disabled={loading}>
-                  {loading ? <CircularProgress size={24} color="inherit" /> : "Submit"}
+                  {loading ? <CircularProgress size={24} color="inherit" /> : "Start Interview"}
                 </Button>
               </Box>
 

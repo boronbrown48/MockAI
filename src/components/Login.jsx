@@ -19,6 +19,7 @@ export default function Login({ setIsAuthenticated }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setLoading(true);
     // Handle sign-in
     try {
       const response = await fetch(BASE_URL + '/login', {
@@ -33,7 +34,7 @@ export default function Login({ setIsAuthenticated }) {
         const data = await response.json();
         // Store the access token (you may want to store it in localStorage or context)
         localStorage.setItem('access_token', data.access_token);
-        localStorage.setItem('client_id', data.cliend_id)
+        localStorage.setItem('client_id', data.client_id)
         setMessage('Login successful!');
 
         console.log(localStorage.getItem('access_token'))

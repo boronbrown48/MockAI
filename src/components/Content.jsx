@@ -25,9 +25,9 @@ const items = [
   },
   {
     icon: <ThumbUpAltRoundedIcon sx={{ color: 'text.secondary' }} />,
-    title: 'Great user experience',
+    title: 'Always clear interviews',
     description:
-      'Integrate our product into your routine with an intuitive and easy-to-use interface.',
+      'Integrate our product into your routine with an intuitive and easy-to-use platform.',
   },
   {
     icon: <AutoFixHighRoundedIcon sx={{ color: 'text.secondary' }} />,

@@ -8,12 +8,18 @@ import Chatbot from './components/Chatbot';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // New loading state
 
   useEffect(() => {
     const token = localStorage.getItem('access_token');
     console.log("Access_Token:", token);
-    setIsAuthenticated(!!token); // Set authenticated state based on token presence
+    setIsAuthenticated(!!token);
+    setIsLoading(false); // Set loading to false once the check is done
   }, []);
+
+  if (isLoading) {
+    return <div>Loading...</div>; // Optionally show a loading indicator
+  }
 
   return (
     <Router>
