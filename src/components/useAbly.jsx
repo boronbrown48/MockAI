@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import Ably from 'ably';
 
 const useAbly = (apiKey) => {
-    const CHANNEL_NAME = import.meta.env.VITE_CHANNEL_NAME;
-    const BASE_URL = import.meta.env.VITE_SERVER_URL;
-    const ABLY_API = import.meta.env.VITE_ABLY_API_KEY;
+    const CHANNEL_NAME = process.env.VITE_CHANNEL_NAME;
+    const BASE_URL = process.env.VITE_SERVER_URL;
+    const ABLY_API = process.env.VITE_ABLY_API_KEY;
     const CLIENT_ID = localStorage.getItem("client_id");
     const resumeData = localStorage.getItem("resumeData");
     const jdData = localStorage.getItem("jdData");

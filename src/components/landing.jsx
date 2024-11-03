@@ -43,7 +43,7 @@ export default function Landing({ setIsAuthenticated }) {
 
   const navigate = useNavigate();
 
-  const BASE_URL = import.meta.env.VITE_SERVER_URL;
+  const BASE_URL = process.env.VITE_SERVER_URL;
 
   const handleFileChange = async (event) => {
     const selectedFile = event.target.files[0];

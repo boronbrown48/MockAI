@@ -15,7 +15,7 @@ export default function Login({ setIsAuthenticated }) {
 
   const navigate = useNavigate();
 
-  const BASE_URL = import.meta.env.VITE_SERVER_URL;
+  const BASE_URL = process.env.VITE_SERVER_URL;
 
   const handleSubmit = async (event) => {
     event.preventDefault();

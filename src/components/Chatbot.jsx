@@ -109,8 +109,8 @@ const MessageContainer = styled(Box)(({ theme }) => ({
 }));
 
 const Chatbot = ({ setIsAuthenticated }) => {
-    const ABLY_API_KEY = import.meta.env.VITE_ABLY_API_KEY;
-    const BASE_URL = import.meta.env.VITE_SERVER_URL;
+    const ABLY_API_KEY = process.env.VITE_ABLY_API_KEY;
+    const BASE_URL = process.env.VITE_SERVER_URL;
     const messagesEndRef = useRef(null);
     const { messages,
         inputMessage,

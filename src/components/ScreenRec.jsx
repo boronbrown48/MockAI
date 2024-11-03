@@ -13,7 +13,7 @@ const ScreenRecorder = () => {
   const chunks = useRef([]);
   const isProcessing = useRef(false);
 
-  const BASE_URL = import.meta.env.VITE_SERVER_URL;
+  const BASE_URL = process.env.VITE_SERVER_URL;
 
   // Configuration for silence detection
   const SILENCE_THRESHOLD = -60; // dB (adjusted for testing)

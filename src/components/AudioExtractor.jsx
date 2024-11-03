@@ -1,7 +1,7 @@
 import audioBufferToWav from 'audiobuffer-to-wav';
 import Groq from 'groq-sdk';
 
-const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+const apiKey = process.env.VITE_GROQ_API_KEY;
 const groq = new Groq({ apiKey: apiKey, dangerouslyAllowBrowser: true });
 
 export const transcribeAudioFile = async (file) => {
