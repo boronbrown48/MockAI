@@ -8,8 +8,6 @@ import ConstructionRoundedIcon from '@mui/icons-material/ConstructionRounded';
 import SettingsSuggestRoundedIcon from '@mui/icons-material/SettingsSuggestRounded';
 import ThumbUpAltRoundedIcon from '@mui/icons-material/ThumbUpAltRounded';
 
-import { Google } from '@mui/icons-material';
-
 const items = [
   {
     icon: <SettingsSuggestRoundedIcon sx={{ color: 'text.secondary' }} />,
@@ -42,8 +40,7 @@ export default function LandingContent() {
     <Stack
       sx={{ flexDirection: 'column', alignSelf: 'top', gap: 4, maxWidth: 600, marginRight: 5 }}
     >
-      <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
-        <Google />
+      <Box sx={{ display: { xs: 'none', md: 'flex' }, marginTop: '30px' }}>
       </Box>
       {items.map((item, index) => (
         <Stack key={index} direction="row" sx={{ gap: 2, alignContent: 'left', justifyContent: 'left' }}>

@@ -13,17 +13,29 @@ import {
     CssBaseline,
     Button,
     Toolbar,
+    useMediaQuery,
+    List,
+    ListItem,
+    ListItemText,
+    Divider,
+    ListItemAvatar
 } from '@mui/material';
 import { Person, SmartToyRounded, Send } from '@mui/icons-material';
-import GraphicEqOutlinedIcon from '@mui/icons-material/GraphicEqOutlined';
-import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
 import { styled } from '@mui/system';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { dracula } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { useScreenRecorder } from './ScreenRecorder';
+import useScreenRecorder from './ScreenRecorder';
 import useAbly from './useAbly';
 import { GoogleIcon, EdgeIcon } from './CustomIcons';
 import { useNavigate } from 'react-router-dom';
+
+import RadioButtonCheckedOutlinedIcon from '@mui/icons-material/RadioButtonCheckedOutlined';
+import StopCircleOutlinedIcon from '@mui/icons-material/StopCircleOutlined';
+import DonutSmallIcon from '@mui/icons-material/DonutSmall';
+import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
+import SendRoundedIcon from '@mui/icons-material/SendRounded';
+
+import './Chatbot.css';
 
 // CodeBlockSection component for rendering code
 const CodeBlockSection = ({ code, language }) => (
@@ -79,7 +91,7 @@ const extractCodeBlocks = (content) => {
 };
 
 
-const darkTheme = createTheme({
+const lightTheme = createTheme({
     typography: {
         fontSize: 16,
         fontFamily: 'Arial',
@@ -88,16 +100,16 @@ const darkTheme = createTheme({
         },
     },
     palette: {
-        mode: 'dark',
+        mode: 'light',
         background: {
-            default: '#0E1117',
-            paper: '#0E1117',
+            default: '#FFFFFF',
+            paper: '#FFFFFF',
         },
         primary: {
-            main: '#60A5FA',
+            main: '#FFFFFF',
         },
         secondary: {
-            main: '#FF0000'
+            main: '#FFFFFF'
         }
     },
 });
@@ -117,6 +129,9 @@ const Chatbot = ({ setIsAuthenticated }) => {
         setInputMessage,
         sendMessage } = useAbly(ABLY_API_KEY);
 
+    const [timer, setTimer] = useState(0); // Timer state to track elapsed time
+    const [intervalId, setIntervalId] = useState(null); // State to store interval ID for clearing
+
     const navigate = useNavigate();
 
     const onTranscriptionReceived = async (message) => {
@@ -124,7 +139,7 @@ const Chatbot = ({ setIsAuthenticated }) => {
         await sendMessage(message);
     };
 
-    const { isRecording, startRecording, stopRecording, error } = useScreenRecorder(onTranscriptionReceived);
+    const { transcription, isRecording, startRecording, stopRecording } = useScreenRecorder(onTranscriptionReceived);
 
     // Load messages from local storage on mount
     useEffect(() => {
@@ -134,6 +149,13 @@ const Chatbot = ({ setIsAuthenticated }) => {
             messages.push(...savedMessages);
         }
     }, [messages]);
+
+    // Format time to display minutes:seconds
+    const formatTime = (time) => {
+        const minutes = Math.floor(time / 60);
+        const seconds = time % 60;
+        return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    };
 
     // Save messages to local storage whenever they change
     useEffect(() => {
@@ -164,7 +186,7 @@ const Chatbot = ({ setIsAuthenticated }) => {
                 {parts.map((part, index) => {
                     if (part.type === 'text') {
                         return (
-                            <Typography key={index} variant="body2" color="#d9d9d9" style={{ lineHeight: "34px" }}>
+                            <Typography key={index} variant="body2" className="radley-regular" color="#000000" style={{ lineHeight: "34px" }}>
                                 {formatContent(part.content)}
                             </Typography>
                         );
@@ -233,145 +255,202 @@ const Chatbot = ({ setIsAuthenticated }) => {
         }
     };
 
-    return (
-        <ThemeProvider theme={darkTheme}>
-            <CssBaseline />
-            <AppBar position="static" sx={{ backdropFilter: "blur(20px)" }} color='transparent'>
-                <Toolbar>
-                    <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+    // MediaQuery hook to check if the screen is mobile (xs) or larger
+    const isMobile = useMediaQuery('(max-width:600px)'); // Adjust this breakpoint as needed
 
-                    </Typography>
-                    <Button color="inherit" onClick={handleLogout}>Logout</Button>
-                </Toolbar>
-            </AppBar>
-            <Container maxWidth="lg" sx={{ height: '100vh', py: 4 }}>
-                <Paper
-                    elevation={3}
-                    sx={{
-                        height: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        bgcolor: '#0E1117',
-                        overflow: 'hidden'
-                    }}
-                >
-                    <Box sx={{
-                        flexGrow: 1,
-                        p: 1,
-                        overflow: 'auto',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 2,
-                        bgcolor: '#0E1117',
-                        '&::-webkit-scrollbar': {
-                            width: '8px',
-                            backgroundColor: '#0E1117', // Background of the scrollbar
-                        },
-                        '&::-webkit-scrollbar-thumb': {
-                            backgroundColor: '#808080', // Color of the scrollbar thumb
-                            borderRadius: '4px',
-                        },
-                        '&::-webkit-scrollbar-thumb:hover': {
-                            backgroundColor: '#FBAA24', // Color on hover
-                        },
-                    }} aria-live="polite">
-                        <Box
-                            display="flex"
-                            height="150px"
-                            position="sticky"
-                        >
-                            <Box
-                                flex={1}
-                                display="flex"
-                                flexDirection="column"
-                                justifyContent="center"
-                                alignItems="flex-start"
-                                padding={2}
+    return (
+        <>
+            <style>
+                {`
+                    body, html {
+                        margin: 0;
+                        padding: 0;
+                        height: 100%;
+                    }
+                `}
+            </style>
+            <ThemeProvider theme={lightTheme}>
+                <CssBaseline />
+                <AppBar position="fixed" sx={{ width: '100%', backgroundColor: '#FFFFFF' }}>
+                    <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        {/* Left side: Logo */}
+                        <IconButton edge="start" sx={{ mr: 2 }} color="inherit">
+                            <DonutSmallIcon sx={{ color: 'black' }} />
+                        </IconButton>
+
+                        {/* Box to hold the timer and buttons in the center */}
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexGrow: 1 }}>
+                            {/* Timer with rounded border */}
+                            <Typography
+                                style={{
+                                    padding: '5px 15px', // Padding inside the timer container
+                                    borderRadius: '20px', // Rounded corners
+                                    border: '1px solid grey', // Border around the timer
+                                    minWidth: '60px', // Ensure a minimum width for the timer container
+                                    textAlign: 'center', // Center the time text
+                                }}
+                                fontSize={'16px'}
+                                color="black"
                             >
-                                <Typography variant="h5" component="h2" color='primary'
-                                    sx={{ fontWeight: 'bold', paddingBottom: 1.5 }}>
-                                    Mock Interview AI
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary"
-                                    sx={{ fontStyle: 'italic', fontSize: '10' }}>
-                                    Share your specific or entire screen screen with audio.
-                                </Typography>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, paddingTop: 2 }}>
-                                    <EdgeIcon />
-                                    <Typography variant="body2">Microsoft Edge</Typography>
-                                    <GoogleIcon />
-                                    <Typography variant="body2">Google Chrome only</Typography>
-                                </Box>
-                            </Box>
+                                {formatTime(timer)}
+                            </Typography>
+
+                            {/* Record Button */}
+                            <Button
+                                variant="outlined"
+                                startIcon={<RadioButtonCheckedOutlinedIcon />}
+                                onClick={startRecording}
+                                style={{
+                                    backgroundColor: isRecording ? 'red' : 'transparent', // Change color on click
+                                    color: isRecording ? 'white' : 'initial', // Adjust text color based on click state
+                                    borderColor: isRecording ? 'red' : 'initial',
+                                    borderRadius: '10px',
+                                    marginLeft: '10px', // Space between the timer and button
+                                    fontSize: '12px'
+                                }}
+                            >
+                                Share Screen
+                            </Button>
+
+                            {/* Stop Button */}
+                            <Button
+                                variant="outlined"
+                                startIcon={<StopCircleOutlinedIcon />}
+                                onClick={stopRecording}
+                                disabled={!isRecording}  // Disable Stop button if not recording
+                                style={{
+                                    backgroundColor: isRecording ? 'transparent' : 'transparent',
+                                    color: isRecording ? 'black' : 'grey',
+                                    borderColor: isRecording ? 'black' : 'grey',
+                                    borderRadius: '10px',
+                                    marginLeft: '10px', // Space between the Record and Stop button
+                                    fontSize: '12px'
+                                }}
+                            >
+                                Stop Sharing
+                            </Button>
                         </Box>
-                        {messages.map((message, index) => (
-                            <MessageContainer key={index} paddingRight={"0px"}>
-                                <Avatar
-                                    sx={{
-                                        bgcolor: message.role === 'user' ? '#F87171' : '#FBBF24',
-                                        width: 32,
-                                        height: 32,
-                                    }}
-                                >
-                                    {message.role === 'user' ?
-                                        <Person sx={{ width: 20, height: 20 }} /> :
-                                        <SmartToyRounded sx={{ width: 20, height: 20 }} />
+
+                        {/* Right side: Logout Button */}
+                        {!isMobile && (
+                            <Button edge="end" color="inherit" variant="outlined"
+                                startIcon={<LogoutOutlinedIcon />} onClick={handleLogout}
+                                style={{
+                                    backgroundColor: 'transparent',
+                                    color: 'black',
+                                    borderColor: 'black',
+                                    borderRadius: '10px',
+                                    marginLeft: '10px', // Space between the Record and Stop button
+                                    fontSize: '12px'
+                                }}
+                            >
+                                Logout
+                            </Button>
+                        )}
+                    </Toolbar>
+                </AppBar>
+                <Container maxWidth="lg" sx={{ height: '100vh' }}>
+                    <Paper
+                        elevation={3}
+                        sx={{
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            bgcolor: '#FFFFFF',
+                            overflow: 'auto'
+                        }}
+                    >
+                        <Box sx={{ marginTop: '60px' }} />
+                        <List sx={{ maxHeight: '100%', overflowY: 'auto', padding: 0 }}>
+                            {messages.map((message, index) => (
+                                <React.Fragment key={index}>
+                                    <ListItem sx={{ padding: '8px 0', display: 'flex', alignItems: 'flex-start' }}>
+                                        {/* Avatar */}
+                                        <ListItemAvatar>
+                                            <Avatar
+                                                sx={{
+                                                    bgcolor: message.role === 'user' ? '#F87171' : '#FBBF24',
+                                                    width: 32,
+                                                    height: 32,
+                                                    marginLeft: 2,
+                                                    marginTop: 1,
+                                                }}
+                                            >
+                                                {message.role === 'user' ? (
+                                                    <Person sx={{ width: 20, height: 20 }} />
+                                                ) : (
+                                                    <SmartToyRounded sx={{ width: 20, height: 20 }} />
+                                                )}
+                                            </Avatar>
+                                        </ListItemAvatar>
+
+                                        {/* Message Box */}
+                                        <Box
+                                            sx={{
+                                                flex: 1,
+                                                bgcolor: message.role === 'user' ? '#f2f2f2' : '#FFFFFF',
+                                                paddingLeft: 2,
+                                                paddingRight: 2,
+                                                paddingTop: 1,
+                                                paddingBottom: 1,
+                                                borderRadius: 2,
+                                            }}
+                                        >
+                                            {renderMessageContent(message.content)}
+                                        </Box>
+                                    </ListItem>
+                                </React.Fragment>
+                            ))}
+
+                            {/* Scroll to bottom */}
+                            <div ref={messagesEndRef} />
+                        </List>
+                        <Box sx={{ marginTop: '60px' }} />
+                        <Box sx={{
+                            position: 'fixed',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            padding: '10px',
+                            backgroundColor: '#fff',
+                            boxShadow: '0 -2px 10px rgba(0,0,0,0.1)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                        }}>
+                            <TextField
+                                fullWidth
+                                variant="outlined"
+                                placeholder="Type your message here..."
+                                value={inputMessage}
+                                onChange={(e) => setInputMessage(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                                size="small"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        backgroundColor: '#FFFFFF',
+                                        fontSize: '14px'
                                     }
-                                </Avatar>
-                                <Box sx={{
-                                    flex: 1,
-                                    bgcolor: message.role === 'user' ? '#1A1C23' : '#0E1117',
-                                    paddingLeft: 2,
-                                    paddingRight: 2,
-                                    paddingTop: 1,
-                                    paddingBottom: 1,
-                                    borderRadius: 2
-                                }}>
-                                    {renderMessageContent(message.content)}
-                                </Box>
-                            </MessageContainer>
-                        ))}
-                        <div ref={messagesEndRef} />
-                    </Box>
-                    <Box sx={{ display: 'flex', gap: 1, bgcolor: '#0E1117' }}>
-                        <IconButton
-                            color={isRecording ? "secondary" : "primary"}
-                            aria-label="Record"
-                            onClick={isRecording ? stopRecording : startRecording}
-                        >
-                            <GraphicEqOutlinedIcon />
-                        </IconButton>
-                        <TextField
-                            fullWidth
-                            variant="outlined"
-                            placeholder="Type your message here..."
-                            value={inputMessage}
-                            onChange={(e) => setInputMessage(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                            size="small"
-                            sx={{
-                                '& .MuiOutlinedInput-root': {
-                                    backgroundColor: '#0E1117',
-                                }
-                            }}
-                        />
-                        <IconButton
-                            color="primary"
-                            aria-label="send message"
-                            onClick={handleSendMessage}
-                            disabled={!inputMessage || !inputMessage.trim()} // Disable button if input is empty
-                        >
-                            <Send />
-                        </IconButton>
-                    </Box>
-                </Paper>
-                <Box sx={{ position: 'fixed', bottom: 16, right: 16 }}>
-                    {/* <Fab color="primary" aria-label="add" >
+                                }}
+                            />
+                            <IconButton
+                                color="primary"
+                                aria-label="send message"
+                                onClick={handleSendMessage}
+                                disabled={!inputMessage || !inputMessage.trim()} // Disable button if input is empty
+                            >
+                                <SendRoundedIcon />
+                            </IconButton>
+                        </Box>
+                    </Paper>
+                    <Box sx={{ position: 'fixed', bottom: 16, right: 16 }}>
+                        {/* <Fab color="primary" aria-label="add" >
                         <Send />
                     </Fab> */}
-                </Box>
-            </Container>
-        </ThemeProvider>
+                    </Box>
+                </Container>
+            </ThemeProvider>
+        </>
     );
 };
 

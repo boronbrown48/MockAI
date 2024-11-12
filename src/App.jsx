@@ -27,6 +27,7 @@ function App() {
         <Route path="/" element={isAuthenticated ? <Navigate to="/landing" /> : <Login setIsAuthenticated={setIsAuthenticated} />} />
         <Route path="/landing" element={isAuthenticated ? <Landing setIsAuthenticated={setIsAuthenticated} /> : <Navigate to="/" />} />
         <Route path="/chat" element={isAuthenticated ? <Chatbot setIsAuthenticated={setIsAuthenticated} /> : <Navigate to="/" />} />
+        <Route path="/chat" element={isAuthenticated ? <Chatbot /> : <Navigate to="/" />} />
       </Routes>
     </Router>
   );

@@ -13,7 +13,8 @@ import {
   IconButton,
   Paper,
   Icon,
-  CircularProgress
+  CircularProgress,
+  useMediaQuery
 } from '@mui/material';
 import LandingContent from './LandingContent';
 import Divider from '@mui/material/Divider';
@@ -21,6 +22,8 @@ import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
 import CheckCircleOutlineOutlinedIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
 import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
 import pdfToText from './PdfOcr'; // Create a URL for the file
+import DonutSmallIcon from '@mui/icons-material/DonutSmall';
+import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 
 export default function Landing({ setIsAuthenticated }) {
   const [text, setText] = useState('');
@@ -223,15 +226,53 @@ export default function Landing({ setIsAuthenticated }) {
       }
     },
   });
+
+  const lightTheme = createTheme({
+    palette: {
+      mode: 'light',
+      background: {
+        default: '#FFFFFF',
+        paper: '#FFFFFF',
+      },
+      primary: {
+        main: '#000000',
+      },
+      secondary: {
+        main: '#FFFFFF'
+      }
+    },
+  });
+
+  // MediaQuery hook to check if the screen is mobile (xs) or larger
+  const isMobile = useMediaQuery('(max-width:600px)'); // Adjust this breakpoint as needed
+
   return (
-    <ThemeProvider theme={darkTheme}>
+    <ThemeProvider theme={lightTheme}>
       <CssBaseline enableColorScheme />
       <AppBar position="static" sx={{ backdropFilter: "blur(20px)" }} color='transparent'>
         <Toolbar>
+          <IconButton>
+            <DonutSmallIcon />
+          </IconButton>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
 
           </Typography>
-          <Button color="inherit" onClick={handleLogout}>Logout</Button>
+          {/* Right side: Logout Button */}
+          {!isMobile && (
+            <Button edge="end" color="inherit" variant="outlined"
+              startIcon={<LogoutOutlinedIcon />} onClick={handleLogout}
+              style={{
+                backgroundColor: 'transparent',
+                color: 'black',
+                borderColor: 'black',
+                borderRadius: '10px',
+                marginLeft: '10px', // Space between the Record and Stop button
+                fontSize: '12px'
+              }}
+            >
+              Logout
+            </Button>
+          )}
         </Toolbar>
       </AppBar>
       {/* <ColorModeSelect sx={{ position: 'fixed', top: '1rem', right: '1rem' }} /> */}
@@ -285,7 +326,7 @@ export default function Landing({ setIsAuthenticated }) {
             >
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
                 <IconButton component="label">
-                  <CloudUploadOutlinedIcon sx={{ height: 40, width: 40 }} />
+                  <CloudUploadOutlinedIcon sx={{ height: 40, width: 40, color: 'black' }} />
                   <input type="file" accept="application/pdf" onChange={handleFileChange} hidden />
                 </IconButton>
 
@@ -325,7 +366,7 @@ export default function Landing({ setIsAuthenticated }) {
 
                 <IconButton component="label" disabled={!isFirstFileUploaded}>
                   {isFirstFileUploaded ? (
-                    <CloudUploadOutlinedIcon sx={{ height: 40, width: 40, color: 'white' }} />
+                    <CloudUploadOutlinedIcon sx={{ height: 40, width: 40, color: 'black' }} />
                   ) : (
                     <CloudUploadOutlinedIcon sx={{ height: 40, width: 40, color: 'grey' }} /> // Replace with your disabled icon
                   )}
@@ -348,7 +389,7 @@ export default function Landing({ setIsAuthenticated }) {
                       Upload Job Description
                     </Typography>
                   ) : (
-                    <Typography variant="body2" sx={{ color: 'white' }}>
+                    <Typography variant="body2" sx={{ color: 'black' }}>
                       Upload Job Description
                     </Typography>
                   )}

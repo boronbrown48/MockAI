@@ -35,7 +35,7 @@ async function pdfToText(pdfUrl) {
   // Perform OCR on each image and collect results
   const textPromises = imagesList.map(async (img) => {
     const result = await Tesseract.recognize(img, 'eng', {
-      logger: (m) => console.log(m), // Optional: for logging progress
+      // logger: (m) => console.log(m), // Optional: for logging progress
     });
 
     if (result && result.data && result.data.text) {

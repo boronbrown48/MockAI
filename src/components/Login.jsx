@@ -68,45 +68,31 @@ export default function Login({ setIsAuthenticated }) {
       }
     },
   });
-  return (
-    <ThemeProvider theme={darkTheme}>
-      <CssBaseline enableColorScheme />
-      <AppBar position="static" sx={{ backdropFilter: "blur(20px)" }} color='transparent'>
-        <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
 
-          </Typography>
-          <Button color="inherit"></Button>
-        </Toolbar>
-      </AppBar>
+  const lightTheme = createTheme({
+    palette: {
+      mode: 'light',
+      background: {
+        default: '#FFFFFF',
+        paper: '#FFFFFF',
+      },
+      primary: {
+        main: '#000000',
+      },
+      secondary: {
+        main: '#FFFFFF'
+      }
+    },
+  });
+
+  return (
+    <ThemeProvider theme={lightTheme}>
+      <CssBaseline enableColorScheme />
       {/* <ColorModeSelect sx={{ position: 'fixed', top: '1rem', right: '1rem' }} /> */}
       <Stack
+        marginTop={"50px"}
         direction="column"
         component="main"
-        sx={[
-          {
-            justifyContent: 'center',
-            height: 'calc((1 - var(--template-frame-height, 0)) * 100%)',
-            marginTop: 'max(40px - var(--template-frame-height, 0px), 0px)',
-            minHeight: '100%',
-          },
-          (theme) => ({
-            '&::before': {
-              content: '""',
-              display: 'block',
-              position: 'absolute',
-              zIndex: -1,
-              inset: 0,
-              backgroundImage:
-                'radial-gradient(ellipse at 50% 50%, hsl(210, 100%, 97%), hsl(0, 0%, 100%))',
-              backgroundRepeat: 'no-repeat',
-              ...theme.applyStyles('dark', {
-                backgroundImage:
-                  'radial-gradient(at 50% 50%, hsla(210, 100%, 16%, 0.5), hsl(220, 30%, 5%))',
-              }),
-            },
-          }),
-        ]}
       >
         <Stack
           direction={{ xs: 'column-reverse', md: 'row' }}
@@ -140,6 +126,7 @@ export default function Login({ setIsAuthenticated }) {
                   id="email"
                   label="Email Address"
                   name="email"
+                  fontSize="14px"
                   autoComplete="email"
                   onChange={(e) => setUsername(e.target.value)}
                   autoFocus
@@ -153,6 +140,7 @@ export default function Login({ setIsAuthenticated }) {
                   label="Password"
                   type="password"
                   id="password"
+                  fontSize="14px"
                   autoComplete="current-password"
                   onChange={(e) => setPassword(e.target.value)}
                   sx={{ mt: 3, mb: 1, borderRadius: 2 }}

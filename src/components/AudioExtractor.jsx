@@ -10,6 +10,33 @@ export const transcribeAudioFile = async (file) => {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const reader = new FileReader();
 
+    const IGNORE_PHRASES = [
+        "thank you", "thanks", "okay", "sorry", "hello", "goodbye", "please", "good morning",
+        "good night", "alright", "got it", "understood", "I see", "excuse me", "yeah",
+        "no problem", "right", "yeah right", "sure", "you’re welcome", "goodbye", "fine", "."
+        // Add more common filler phrases here
+    ];
+
+    const isIgnoreText = (text) => {
+        // Convert to lowercase for case-insensitive matching
+        const lowerText = text.toLowerCase().trim();
+
+        // Check if the text matches any of the garbage phrases
+        return IGNORE_PHRASES.some(phrase => lowerText.includes(phrase));
+    };
+
+    const GIBBERISH_THRESHOLD = 0.6; // A threshold for gibberish detection (adjustable)
+    const isGibberish = (text) => {
+        const words = text.split(/\s+/); // Split by whitespace
+        if (words.length < 5) return true; // Too short to be meaningful
+
+        // Count words that don't match typical word patterns (i.e., non-alphabetical)
+        const gibberishRatio = words.filter(word => !/^[a-zA-Z]+$/.test(word)).length / words.length;
+
+        return gibberishRatio > GIBBERISH_THRESHOLD;
+    };
+
+
     return new Promise((resolve, reject) => {
         reader.onload = async () => {
             const audioFileAsBuffer = reader.result; // ArrayBuffer
@@ -51,6 +78,21 @@ export const transcribeAudioFile = async (file) => {
 
                 // Send to Groq AI for transcription
                 const transcriptionText = await sendToGroqAI(wavBlob);
+                // Gibberish detection before sending to Groq AI
+                // if (isGibberish(transcriptionText)) {
+                //     console.log("Transcription is likely gibberish, skipping submission.")
+                //     reject('Transcription is likely gibberish, skipping submission.');
+                //     return; // Exit the process early if gibberish is detected
+                // }
+
+                // Post-process to remove garbage text
+                // if (isIgnoreText(transcriptionText)) {
+                //     console.log("TDetected random audio, skipping transcription")
+                //     reject('Detected random audio, skipping transcription.');
+                //     return; // Stop if transcription is garbage
+                // }
+
+                // If not gibberish, resolve with the transcription text
                 resolve(transcriptionText);
             } catch (err) {
                 reject(`Error during audio processing: ${err.message}`);
