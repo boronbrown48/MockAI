@@ -14,6 +14,8 @@ const useScreenRecorder = (onTranscriptionReceived) => {
     const streamRef = useRef(null);
     const chunksRef = useRef([]); // Store audio chunks for each recording session
 
+    const isMac = navigator.platform.toLowerCase().includes('mac');
+
     const startScreenCapture = async () => {
         try {
             const stream = await navigator.mediaDevices.getDisplayMedia({
@@ -61,8 +63,8 @@ const useScreenRecorder = (onTranscriptionReceived) => {
 
         let silenceDetected = false;
         let lastNonSilentTime = Date.now();
-        const silenceThreshold = 10;
-        const silenceTimeout = 1500;
+        const silenceThreshold = isMac ? 15 : 10;
+        const silenceTimeout = isMac ? 2500 : 1500;
 
         const checkSilence = () => {
             analyser.getByteFrequencyData(dataArray);
