@@ -1,4 +1,3 @@
-// useScreenRecorder.js
 import { useEffect, useRef, useState } from 'react';
 import audioBufferToWav from 'audiobuffer-to-wav';
 import Groq from 'groq-sdk';
@@ -12,7 +11,7 @@ const useScreenRecorder = (onTranscriptionReceived) => {
     const [isRecording, setIsRecording] = useState(false);
     const mediaRecorderRef = useRef(null);
     const streamRef = useRef(null);
-    const chunksRef = useRef([]); // Store audio chunks for each recording session
+    const chunksRef = useRef([]);
 
     const isMac = navigator.platform.toLowerCase().includes('mac');
 
@@ -35,16 +34,16 @@ const useScreenRecorder = (onTranscriptionReceived) => {
 
     const startRecording = (stream) => {
         const mediaRecorder = new MediaRecorder(stream);
-        chunksRef.current = []; // Reset chunks for new recording
+        chunksRef.current = [];
 
         mediaRecorder.ondataavailable = (e) => {
-            chunksRef.current.push(e.data); // Add new chunks
+            chunksRef.current.push(e.data);
         };
 
         mediaRecorder.onstop = async () => {
             const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
             await handleSilenceDetected(blob);
-            chunksRef.current = []; // Clear the chunks array after stop
+            chunksRef.current = [];
         };
 
         mediaRecorder.start();
@@ -57,36 +56,58 @@ const useScreenRecorder = (onTranscriptionReceived) => {
         const source = audioContext.createMediaStreamSource(stream);
         source.connect(analyser);
 
-        analyser.fftSize = 64;
+        analyser.fftSize = 256; // Increased for better frequency analysis
         const bufferLength = analyser.frequencyBinCount;
         const dataArray = new Uint8Array(bufferLength);
 
-        let silenceDetected = false;
-        let lastNonSilentTime = Date.now();
-        const silenceThreshold = isMac ? 15 : 10;
-        const silenceTimeout = isMac ? 2500 : 1500;
+        let silenceStart = null;
+        let consecutiveSilentFrames = 0;
+        const CONSECUTIVE_FRAMES_THRESHOLD = 5; // Number of frames to confirm silence
 
         const checkSilence = () => {
             analyser.getByteFrequencyData(dataArray);
+            
+            // Calculate average volume with focus on speech frequencies
             let sum = 0;
+            let count = 0;
             for (let i = 0; i < bufferLength; i++) {
-                sum += dataArray[i];
+                // Focus on frequencies between 200Hz and 3000Hz (speech range)
+                const frequency = i * (audioContext.sampleRate / analyser.fftSize);
+                if (frequency >= 200 && frequency <= 3000) {
+                    sum += dataArray[i];
+                    count++;
+                }
             }
-            const averageVolume = sum / bufferLength;
+            const averageVolume = sum / count;
+
+            const silenceThreshold = isMac ? 15 : 10;
             const currentTime = Date.now();
 
             if (averageVolume < silenceThreshold) {
-                if (!silenceDetected && (currentTime - lastNonSilentTime) >= silenceTimeout) {
-                    silenceDetected = true;
-                    mediaRecorder.stop();
+                consecutiveSilentFrames++;
+                if (silenceStart === null) {
+                    silenceStart = currentTime;
+                }
+
+                // Check if we've had enough consecutive silent frames and enough time has passed
+                if (consecutiveSilentFrames >= CONSECUTIVE_FRAMES_THRESHOLD && 
+                    currentTime - silenceStart >= 2000) {
+                    if (mediaRecorder.state === 'recording') {
+                        mediaRecorder.stop();
+                        silenceStart = null;
+                        consecutiveSilentFrames = 0;
+                    }
                 }
             } else {
-                if (silenceDetected) {
-                    silenceDetected = false;
-                    lastNonSilentTime = currentTime;
+                silenceStart = null;
+                consecutiveSilentFrames = 0;
+                
+                // If we were stopped due to silence, start a new recording
+                if (mediaRecorder.state === 'inactive') {
                     mediaRecorder.start();
                 }
             }
+
             requestAnimationFrame(checkSilence);
         };
 
@@ -96,32 +117,13 @@ const useScreenRecorder = (onTranscriptionReceived) => {
     const handleSilenceDetected = async (blob) => {
         try {
             const transcriptionText = await transcribeAudioFile(blob);
-            setTranscription(transcriptionText); // Update transcription state
+            setTranscription(transcriptionText);
             if (onTranscriptionReceived) {
-                onTranscriptionReceived(transcriptionText); // Pass the transcription to the parent
+                onTranscriptionReceived(transcriptionText);
             }
         } catch (error) {
             console.error('Error in transcription:', error);
         }
-    };
-
-    const start = async () => {
-        const stream = await startScreenCapture();
-        streamRef.current = stream;
-        const mediaRecorder = startRecording(stream);
-        mediaRecorderRef.current = mediaRecorder;
-        detectSilence(stream, mediaRecorder);
-        setIsRecording(true); // Mark as recording
-    };
-
-    const stop = () => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-            mediaRecorderRef.current.stop();
-        }
-        if (streamRef.current) {
-            streamRef.current.getTracks().forEach((track) => track.stop());
-        }
-        setIsRecording(false); // Mark as not recording
     };
 
     const transcribeAudioFile = async (file) => {
@@ -188,6 +190,25 @@ const useScreenRecorder = (onTranscriptionReceived) => {
         } catch (error) {
             throw new Error('Transcription error: ' + error.message);
         }
+    };
+
+    const start = async () => {
+        const stream = await startScreenCapture();
+        streamRef.current = stream;
+        const mediaRecorder = startRecording(stream);
+        mediaRecorderRef.current = mediaRecorder;
+        detectSilence(stream, mediaRecorder);
+        setIsRecording(true);
+    };
+
+    const stop = () => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+            mediaRecorderRef.current.stop();
+        }
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach((track) => track.stop());
+        }
+        setIsRecording(false);
     };
 
     return {
