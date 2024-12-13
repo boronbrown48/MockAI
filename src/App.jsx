@@ -5,6 +5,7 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 import Login from './components/Login';
 import Landing from './components/landing';
 import Chatbot from './components/Chatbot';
+import ResumeGen from './components/ResumeGen';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -27,7 +28,8 @@ function App() {
         <Route path="/" element={isAuthenticated ? <Navigate to="/landing" /> : <Login setIsAuthenticated={setIsAuthenticated} />} />
         <Route path="/landing" element={isAuthenticated ? <Landing setIsAuthenticated={setIsAuthenticated} /> : <Navigate to="/" />} />
         <Route path="/chat" element={isAuthenticated ? <Chatbot setIsAuthenticated={setIsAuthenticated} /> : <Navigate to="/" />} />
-        <Route path="/chat" element={isAuthenticated ? <Chatbot /> : <Navigate to="/" />} />
+        <Route path="/resume" element={isAuthenticated ? <ResumeGen setIsAuthenticated={setIsAuthenticated} /> : <Navigate to="/" />} />
+        {/* <Route path="/chat" element={isAuthenticated ? <Chatbot /> : <Navigate to="/" />} /> */}
       </Routes>
     </Router>
   );

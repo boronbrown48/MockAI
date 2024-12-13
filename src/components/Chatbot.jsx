@@ -134,12 +134,21 @@ const Chatbot = ({ setIsAuthenticated }) => {
 
     const navigate = useNavigate();
 
-    const onTranscriptionReceived = async (message) => {
-        console.log("Sending to chatbot:", message);
-        await sendMessage(message);
-    };
+    const { transcription, isRecording, startRecording, stopRecording } = useScreenRecorder();
 
-    const { transcription, isRecording, startRecording, stopRecording } = useScreenRecorder(onTranscriptionReceived);
+    useEffect(() => {
+        // Define an inner async function
+        const fetchData = async () => {
+            if (transcription) {
+                console.log("Sending to chatbot:", transcription);
+                await sendMessage(transcription);
+            }
+        };
+
+        // Call the async function immediately
+        fetchData();
+    }, [transcription]); // This will trigger the effect whenever 'transcription' changes
+
 
     // Load messages from local storage on mount
     useEffect(() => {
