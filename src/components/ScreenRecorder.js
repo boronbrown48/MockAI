@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import audioBufferToWav from "audiobuffer-to-wav";
 import Groq from "groq-sdk";
 
-const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+const apiKey = "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";
 const groq = new Groq({ apiKey: apiKey, dangerouslyAllowBrowser: true });
 
 const useScreenRecorder = () => {
