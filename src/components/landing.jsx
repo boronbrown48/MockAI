@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
 import Stack from '@mui/material/Stack';
 import { useNavigate } from 'react-router-dom';
@@ -12,135 +12,51 @@ import {
   AppBar,
   IconButton,
   Paper,
-  Icon,
+  TextField,
   CircularProgress,
-  useMediaQuery
+  useMediaQuery,
+  Dialog,
+  DialogContent,
+  Divider
 } from '@mui/material';
-import LandingContent from './LandingContent';
-import Divider from '@mui/material/Divider';
-import CloudUploadOutlinedIcon from '@mui/icons-material/CloudUploadOutlined';
-import CheckCircleOutlineOutlinedIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
-import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined';
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
+import ClearIcon from "@mui/icons-material/Clear";
+import PlayCircleFilledWhiteOutlinedIcon from '@mui/icons-material/PlayCircleFilledWhiteOutlined';
+import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
 import pdfToText from './PdfOcr'; // Create a URL for the file
+import { extractTextFromDocx } from "./DocxExtractor";
 import DonutSmallIcon from '@mui/icons-material/DonutSmall';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
+import { useTheme } from '@mui/material/styles';
+import CandidateFormDialog from './SessionDialog';
 
-export default function Landing({ setIsAuthenticated }) {
-  const [text, setText] = useState('');
+export default function Landing({ handleAccessChat, setIsAuthenticated }) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [resumeFiles, setResumeFiles] = useState([]);
+  const [jobDescFiles, setJobDescFiles] = useState([]);
+  const [resumeText, setResumeText] = useState("");
+  const [jobDescText, setJobDescText] = useState("");
+  const [isDraggingResume, setIsDraggingResume] = useState(false);
+  const [isDraggingJobDesc, setIsDraggingJobDesc] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState(""); // Loading message
+  const [entries, setEntries] = useState([]);
 
-  const [file, setFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadComplete, setUploadComplete] = useState(false);
-
-  const [jdFile, setJDFile] = useState(null);
-  const [uploadingJD, setJDUploading] = useState(false);
-  const [uploadJDComplete, setUploadJDComplete] = useState(false);
-
-  const [isFirstFileUploaded, setIsFirstFileUploaded] = useState(false);
-  const [isSecondFileUploaded, setIsSecondFileUploaded] = useState(false);
-
-  const [resumeData, setResumeData] = useState(false);
-  const [jdData, setJDData] = useState(false);
+  const resumeInputRef = useRef(null);
+  const jobDescInputRef = useRef(null);
 
   const navigate = useNavigate();
 
   const BASE_URL = "https://mockaibackend.vercel.app";
 
-  const handleFileChange = async (event) => {
-    const selectedFile = event.target.files[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-      setUploading(true);
-      setUploadComplete(false);
-
-      if (!selectedFile || selectedFile.type !== 'application/pdf') {
-        console.log("Please upload a valid PDF file.")
-        setError('Please upload a valid PDF file.');
-        return;
-      }
-
-      const fileUrl = URL.createObjectURL(selectedFile); // Create a URL for the file
-
-      setError('');
-
-      try {
-        const extractedText = await pdfToText(fileUrl); // Call the pdfToText function
-        console.log(extractedText)
-        setResumeData(extractedText);
-        if (fileUrl) {
-          return () => {
-            URL.revokeObjectURL(fileUrl);
-          };
-        }
-      } catch (err) {
-        setError('Error extracting text from the PDF.');
-        console.error(err);
-      } finally {
-        setUploading(false);
-        setUploadComplete(true);
-        setIsFirstFileUploaded(true);
-      }
-    }
-    setUploading(false);
-    setUploadComplete(true);
-    setIsFirstFileUploaded(true);
-  };
-
-  const handleJDFileChange = async (event) => {
-    const selectedJDFile = event.target.files[0];
-    if (selectedJDFile) {
-      setJDFile(selectedJDFile);
-      setJDUploading(true);
-      setUploadJDComplete(false);
-
-      if (!selectedJDFile || selectedJDFile.type !== 'application/pdf') {
-        setError('Please upload a valid PDF file.');
-        return;
-      }
-
-      const fileUrl = URL.createObjectURL(selectedJDFile); // Create a URL for the file
-
-      setError('');
-
-      try {
-        const extractedText = await pdfToText(fileUrl); // Call the pdfToText function
-        setJDData(extractedText);
-        if (fileUrl) {
-          return () => {
-            URL.revokeObjectURL(fileUrl);
-          };
-        }
-      } catch (err) {
-        setError('Error extracting text from the PDF.');
-        console.error(err);
-      } finally {
-        setJDUploading(false);
-        setUploadJDComplete(true);
-        setIsSecondFileUploaded(true);
-      }
-    }
-  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    // Check if both files are selected
-    if (!file || !jdFile) {
-      setError('Please upload both the candidate\'s resume and the job description.');
-      console.error("Select all files")
-      return; // Exit the function if files are not selected
-    }
-
-    setError(''); // Clear any previous error messages
     setLoading(true); // Start loading
 
     // Access the token from local storage
     const storedToken = localStorage.getItem('access_token');
-    console.log(storedToken)
-
-    console.log(resumeData)
 
     try {
       const response = await fetch(BASE_URL + '/extract-resume', {
@@ -149,17 +65,21 @@ export default function Landing({ setIsAuthenticated }) {
           'Content-Type': 'application/json', // Change to x-www-form-urlencoded
           'Authorization': `Bearer ${storedToken}`, // Include the token in the Authorization header
         },
-        body: JSON.stringify({ resume: resumeData }), // Send data as form data
+        body: JSON.stringify({
+          resume: resumeText,
+          // jobDescription: jobDescText,
+        }), // Send data as form data
       });
 
       if (response.ok) {
         const data = await response.json();
         console.log(data)
-        localStorage.setItem('resumeData', data);
-        localStorage.setItem('jdData', jdData);
+        localStorage.setItem('resumeData', resumeText);
+        localStorage.setItem('jdData', jobDescText);
 
         setIsAuthenticated(true);
         // Redirect to login page or another page
+        handleAccessChat();
         navigate('/chat');
       } else {
         const data = await response.json();
@@ -170,9 +90,42 @@ export default function Landing({ setIsAuthenticated }) {
     } finally {
       setLoading(false); // Reset loading state when done
     }
-    // setIsAuthenticated(true);
-    // navigate('/chat');
   };
+
+  const getSessionsList = async (clientId) => {
+    console.log(clientId)
+    try {
+      // Make a GET request to the /get_sessions_list endpoint with the client_id as a query parameter
+      const response = await fetch(`${BASE_URL}/get_sessions_list?client_id=${clientId}`);
+
+      // Check if the response is OK (status code 200)
+      if (!response.ok) {
+        throw new Error("Failed to fetch sessions");
+      }
+
+      const dataText = await response.text();
+      console.log("Raw response data:", dataText);
+
+      if (dataText != "") {
+        const dataJson = JSON.parse(dataText.trim());
+        console.log("Sessions Data: ", dataJson)
+        console.log(typeof dataJson);
+        console.log(Array.isArray(JSON.parse(dataJson)));
+        setEntries(JSON.parse(dataJson));
+      }
+
+    } catch (error) {
+      console.error("Error fetching sessions:", error);
+    }
+  };
+
+  useEffect(() => {
+    const clientId = localStorage.getItem('client_id');
+    if (clientId) {
+      getSessionsList(clientId);
+    }
+  }, []); // Empty dependency array ensures this only runs once when the component mounts.
+
 
   const handleLogout = async () => {
     try {
@@ -209,24 +162,6 @@ export default function Landing({ setIsAuthenticated }) {
     }
   };
 
-
-  const darkTheme = createTheme({
-    typography: {
-      fontSize: 15,
-      fontFamily: 'Arial',
-    },
-    palette: {
-      mode: 'dark',
-      background: {
-        default: '#0E1117',
-        paper: '#0E1117',
-      },
-      primary: {
-        main: '#60A5FA',
-      }
-    },
-  });
-
   const lightTheme = createTheme({
     palette: {
       mode: 'light',
@@ -243,19 +178,209 @@ export default function Landing({ setIsAuthenticated }) {
     },
   });
 
+  const handleDrag = (e, setDragging) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragging(true);
+    } else if (e.type === "dragleave") {
+      setDragging(false);
+    }
+  };
+
+  const handleClear = (e, type) => {
+    e.stopPropagation(); // Prevent triggering the file dialog
+    if (type === "Resume") {
+      setResumeFiles([]);
+      setResumeText("");
+      if (resumeInputRef.current) {
+        resumeInputRef.current.value = "";
+      }
+    } else {
+      setJobDescFiles([]);
+      setJobDescText("");
+      if (jobDescInputRef.current) {
+        jobDescInputRef.current.value = "";
+      }
+    }
+    console.log(`Cleared ${type} files`);
+  };
+
+  const handleFileChange = async (files, type) => {
+    const validFiles = Array.from(files).filter(
+      (file) =>
+        file.type === "application/pdf" ||
+        file.type ===
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    );
+
+    if (validFiles.length > 0) {
+      console.log(`${type} files selected:`, validFiles.map((f) => f.name));
+
+      const file = validFiles[0]; // Handle only the first file for simplicity
+
+      try {
+        setLoading(true); // Show the loading dialog
+        setLoadingMessage(`Processing ${type} file...`);
+        let extractedText = "";
+
+        if (file.type === "application/pdf") {
+          extractedText = await pdfToText(URL.createObjectURL(file));
+        } else if (
+          file.type ===
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ) {
+          extractedText = await extractTextFromDocx(file);
+        }
+
+        console.log(`Extracted text from ${type}:`, extractedText);
+
+        if (type === "Resume") {
+          setResumeFiles([file]);
+          setResumeText(extractedText);
+        } else {
+          setJobDescFiles([file]);
+          setJobDescText(extractedText);
+        }
+      } catch (error) {
+        console.error(`Error processing ${type} file:`, error);
+        alert(`Failed to extract text from the uploaded ${type}.`);
+      } finally {
+        setLoading(false); // Hide the loading dialog
+      }
+    }
+  };
+
+  const handleDropResume = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingResume(false);
+    handleFileChange(e.dataTransfer.files, "Resume");
+  }, []);
+
+  const handleDropJobDesc = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingJobDesc(false);
+    handleFileChange(e.dataTransfer.files, "Job Description");
+  }, []);
+
+  const DropZone = ({
+    onDragEnter,
+    onDragLeave,
+    onDragOver,
+    onDrop,
+    isDragging,
+    files,
+    title,
+    inputRef,
+    type,
+  }) => (
+    <>
+      <input
+        type="file"
+        ref={inputRef}
+        style={{ display: "none" }}
+        accept=".pdf,.docx"
+        onChange={(e) => handleFileChange(e.target.files, type)}
+        multiple={false}
+      />
+      <Paper
+        onClick={() => inputRef.current?.click()}
+        onDragEnter={onDragEnter}
+        onDragLeave={onDragLeave}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+        variant="outlined"
+        sx={{
+          height: "45px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 1,
+          p: 1,
+          backgroundColor: isDragging ? "#f0f7ff" : "background.paper",
+          borderColor: isDragging ? "primary.main" : "#808080",
+          borderStyle: "dashed",
+          cursor: "pointer",
+          "&:hover": {
+            backgroundColor: "#f5f5f5",
+          },
+        }}
+      >
+        <CloudUploadIcon sx={{ fontSize: 20, color: "action.active" }} />
+        <Typography variant="caption" noWrap sx={{ fontWeight: "bold" }}>
+          {files.length > 0 ? files.map((f) => f.name).join(", ") : title}
+        </Typography>
+        {files.length > 0 && (
+          <IconButton
+            size="small"
+            onClick={(e) => handleClear(e, type)}
+            sx={{
+              mr: -0.5,
+              "&:hover": {
+                color: "error.main",
+              },
+            }}
+          >
+            <ClearIcon sx={{ fontSize: 16 }} />
+          </IconButton>
+        )}
+      </Paper>
+    </>
+  );
+
+  // Styles for the table
+  const styles = {
+    cell: {
+      borderBottom: '1px solid grey', // Only the bottom border is visible
+      borderColor: "#D2D2D2",
+      padding: '10px',
+      textAlign: 'left',
+      maxWidth: '100px',
+      width: '100px',
+    },
+    row: {
+      borderBottom: '1px solid grey',
+    },
+  };
+
+  // Handle the "Start" button click
+  const handleStart = (id) => {
+    alert(`Start clicked for entry ID: ${id}`);
+  };
+
+  // Handle the "Delete" button click
+  const handleDelete = (id) => {
+    const updatedEntries = entries.filter((entry) => entry.id !== id);
+    setEntries(updatedEntries);
+  };
+
+  const [openDialog, setOpenDialog] = useState(false);
+
+  const handleDialogOpen = () => {
+    setOpenDialog(true);
+  };
+
+  const handleDialogClose = () => {
+    setOpenDialog(false);
+  };
+
   // MediaQuery hook to check if the screen is mobile (xs) or larger
   const isMobile = useMediaQuery('(max-width:600px)'); // Adjust this breakpoint as needed
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
   return (
     <ThemeProvider theme={lightTheme}>
       <CssBaseline enableColorScheme />
-      <AppBar position="static" sx={{ backdropFilter: "blur(20px)" }} color='transparent'>
+      <AppBar position="fixed" sx={{ background: "#FFFFFF" }} color='transparent'>
         <Toolbar>
           <IconButton>
             <DonutSmallIcon />
           </IconButton>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-
+          <Typography variant="title" component="div" sx={{ flexGrow: 1, fontWeight: 'bold', marginLeft: '10px' }}>
+            TITLE
           </Typography>
           {/* Right side: Logout Button */}
           {!isMobile && (
@@ -276,149 +401,200 @@ export default function Landing({ setIsAuthenticated }) {
         </Toolbar>
       </AppBar>
       {/* <ColorModeSelect sx={{ position: 'fixed', top: '1rem', right: '1rem' }} /> */}
-      <Stack
-        direction="column"
-        component="main"
-        sx={[
-          {
-            justifyContent: 'center',
-            height: 'calc((1 - var(--template-frame-height, 0)) * 100%)',
-            marginTop: 'max(40px - var(--template-frame-height, 0px), 0px)',
-            minHeight: '100%',
-          },
-          (theme) => ({
-            '&::before': {
-              content: '""',
-              display: 'block',
-              position: 'absolute',
-              zIndex: -1,
-              inset: 0,
-              backgroundImage:
-                'radial-gradient(ellipse at 50% 50%, hsl(210, 100%, 97%), hsl(0, 0%, 100%))',
-              backgroundRepeat: 'no-repeat',
-              ...theme.applyStyles('dark', {
-                backgroundImage:
-                  'radial-gradient(at 50% 50%, hsla(210, 100%, 16%, 0.5), hsl(220, 30%, 5%))',
-              }),
-            },
-          }),
-        ]}
-      >
-        <Stack
-          direction={{ xs: 'column-reverse', md: 'row' }}
-          sx={{
-            justifyContent: 'center',
-            gap: { xs: 6, sm: 6 },
-            p: { xs: 2, sm: 1 },
-            m: 'auto',
-          }}
-        >
-          <LandingContent sx={{ alignItems: 'left' }} />
-          <Divider orientation='vertical' variant="middle" flexItem />
-          <Container maxWidth="xs" sx={{ height: '100vh' }}>
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                marginTop: 5,
-                height: '100%'
+      <Stack direction={isSmallScreen ? 'column' : 'row'} alignItems="center" spacing={1} paddingBottom={"100px"}>
+        <Container sx={{ height: '100vh', alignItems: "center", backgroundColor: "#FFFFFF", marginTop: '90px' }}>
+          <div style={{ margin: '20px' }}>
+            <div style={{ marginTop: '100px' }} />
+            <Typography alignContent="center" sx={{ fontWeight: "bold", mb: 2 }}>
+              SAVED SESSIONS LIST
+            </Typography>
+            <table
+              style={{
+                width: '100%',
+                borderCollapse: 'collapse',
               }}
             >
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-                <IconButton component="label">
-                  <CloudUploadOutlinedIcon sx={{ height: 40, width: 40, color: 'black' }} />
-                  <input type="file" accept="application/pdf" onChange={handleFileChange} hidden />
-                </IconButton>
-
-                <Box mt={2} textAlign="center">
-                  {uploading ? (
-                    <Box display="flex" alignItems="center" justifyContent="center">
-                      <CircularProgress size={24} style={{ marginRight: 8 }} />
-                      Processing..
-                    </Box>
-                  ) : uploadComplete ? (
-                    <Box display="flex" alignItems="center" justifyContent="center" color="green">
-                      <CheckCircleOutlineOutlinedIcon style={{ marginRight: 8 }} />
-                      Processing Complete
-                    </Box>
-                  ) : (
-                    <span>Upload Candidate's Resume</span> // Changed to <span> to avoid nesting issues
-                  )}
-                </Box>
-
-                {file && (
-                  <Paper elevation={2} sx={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    width: '200px',
-                    mt: 2
-                  }}>
-                    <Icon style={{ marginRight: 8 }}>
-                      <PictureAsPdfOutlinedIcon />
-                    </Icon>
-                    <Typography variant="body2"
-                    > {file.name.length > 20 ? `${file.name.substring(0, 20)}...` : file.name}</Typography> {/* Use Typography for file name */}
-                  </Paper>
-                )}
-
-                <Divider width="100%" sx={{ mt: 5, marginBottom: 2 }} />
-
-                <IconButton component="label" disabled={!isFirstFileUploaded}>
-                  {isFirstFileUploaded ? (
-                    <CloudUploadOutlinedIcon sx={{ height: 40, width: 40, color: 'black' }} />
-                  ) : (
-                    <CloudUploadOutlinedIcon sx={{ height: 40, width: 40, color: 'grey' }} /> // Replace with your disabled icon
-                  )}
-                  <input type="file" accept="application/pdf" onChange={handleJDFileChange} hidden />
-                </IconButton>
-
-                <Box mt={2} textAlign="center">
-                  {uploadingJD ? (
-                    <Box display="flex" alignItems="center" justifyContent="center">
-                      <CircularProgress size={24} style={{ marginRight: 8 }} />
-                      Processing..
-                    </Box>
-                  ) : uploadJDComplete ? (
-                    <Box display="flex" alignItems="center" justifyContent="center" color="green">
-                      <CheckCircleOutlineOutlinedIcon style={{ marginRight: 8 }} />
-                      Processing Complete
-                    </Box>
-                  ) : !isFirstFileUploaded ? (
-                    <Typography variant="body2" sx={{ color: 'grey' }}>
-                      Upload Job Description
+              <thead>
+                <tr>
+                  <th style={styles.titleCell}>
+                    <Typography variant="subtitle1" align="left" fontWeight="bold" fontSize={"14px"} backgroundColor="#F2F2F2" paddingLeft={"10px"}>
+                      Name
                     </Typography>
-                  ) : (
-                    <Typography variant="body2" sx={{ color: 'black' }}>
-                      Upload Job Description
+                  </th>
+                  <th style={styles.titleCell}>
+                    <Typography variant="subtitle1" align="left" fontWeight="bold" fontSize={"14px"} backgroundColor="#F2F2F2" paddingLeft={"10px"} >
+                      Title
                     </Typography>
-                  )}
-                </Box>
-
-                {jdFile && (
-                  <Paper elevation={2} sx={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    width: '200px',
-                    mt: 2
-                  }}>
-                    <Icon style={{ marginRight: 8 }}>
-                      <PictureAsPdfOutlinedIcon />
-                    </Icon>
-                    <Typography variant="body2"
-                    > {jdFile.name.length > 20 ? `${jdFile.name.substring(0, 20)}...` : jdFile.name}</Typography> {/* Use Typography for file name */}
-                  </Paper>
+                  </th>
+                  <th style={styles.titleCell}>
+                    <Typography variant="subtitle1" align="left" fontWeight="bold" fontSize={"14px"} backgroundColor="#F2F2F2" paddingLeft={"10px"}>
+                      Created
+                    </Typography>
+                  </th>
+                  <th style={styles.titleCell}>
+                    <Typography variant="subtitle1" align="left" fontWeight="bold" fontSize={"14px"} backgroundColor="#F2F2F2" paddingLeft={"10px"}>
+                      Actions
+                    </Typography>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.isArray(entries) && entries.length > 0 ? (
+                  // If entries is a valid array and has data, map through it
+                  entries.map((entry) => (
+                    <tr key={entry.id} style={styles.row}>
+                      <td style={styles.cell}>
+                        <Typography fontSize={"14px"}>{entry.candidate_name}</Typography>
+                      </td>
+                      <td style={styles.cell}>
+                        <Typography fontSize={"14px"}>{entry.role}</Typography>
+                      </td>
+                      <td style={styles.cell}>
+                        <Typography fontSize={"14px"}>{entry.created_at}</Typography>
+                      </td>
+                      <td style={styles.cell}>
+                        <IconButton onClick={() => handleStart(entry.id)} style={{ marginLeft: '10px', color: '#427ef5' }}>
+                          <PlayCircleFilledWhiteOutlinedIcon />
+                        </IconButton>
+                        <IconButton
+                          onClick={() => handleDelete(entry.id)}
+                          style={{ marginLeft: '10px', color: 'red' }}
+                        >
+                          <DeleteOutlinedIcon />
+                        </IconButton>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  // If entries is an empty array or not valid, display a "No entries" message
+                  <tr>
+                    <td colSpan="4" style={{ textAlign: 'center', ...styles.cell }}>
+                      No entries
+                    </td>
+                  </tr>
                 )}
+              </tbody>
 
-                <Button variant="contained" color="primary" sx={{ mt: 5 }} onClick={handleSubmit} disabled={loading}>
-                  {loading ? <CircularProgress size={24} color="inherit" /> : "Start Interview"}
+            </table>
+          </div>
+        </Container>
+        <Divider orientation={isSmallScreen ? 'horizontal' : 'vertical'} variant="middle" flexItem />
+        <Container sx={{ height: '100vh', alignItems: "center" }}>
+          <Box sx={{ padding: '10px', mx: "auto" }}>
+            <Box sx={{ marginTop: '90px' }} />
+            <Typography alignContent="center" sx={{ fontWeight: "bold", mb: 2 }}>
+              UPLOAD RESUME & JOB DESCRIPTION
+            </Typography>
+            <form onSubmit={handleSubmit}>
+              <Stack spacing={3}>
+                {/* Resume Section */}
+                <Paper elevation={2} sx={{ p: 3 }}>
+                  <Stack spacing={2}>
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <UploadFileIcon color="primary" />
+                      <Typography
+                        variant="caption"
+                        color="textPrimary"
+                        sx={{ fontWeight: "bold", fontSize: '13px' }}
+                      >
+                        Upload Resume
+                      </Typography>
+                    </Stack>
+                    <DropZone
+                      onDragEnter={(e) => handleDrag(e, setIsDraggingResume)}
+                      onDragLeave={(e) => handleDrag(e, setIsDraggingResume)}
+                      onDragOver={(e) => handleDrag(e, setIsDraggingResume)}
+                      onDrop={handleDropResume}
+                      isDragging={isDraggingResume}
+                      files={resumeFiles}
+                      title="Drag & Drop here (PDF/DOCX)"
+                      inputRef={resumeInputRef}
+                      type="Resume"
+                    />
+                    <TextField
+                      multiline
+                      rows={5}
+                      value={resumeText}
+                      onChange={(e) => setResumeText(e.target.value)}
+                      placeholder="Enter Resume here"
+                      fullWidth
+                    />
+                  </Stack>
+                </Paper>
+
+                {/* Job Description Section */}
+                <Paper elevation={2} sx={{ p: 3 }}>
+                  <Stack spacing={2}>
+                    <Stack direction="row" alignItems="center" spacing={1}>
+                      <UploadFileIcon color="primary" />
+                      <Typography
+                        variant="caption"
+                        color="textPrimary"
+                        sx={{ fontWeight: "bold", fontSize: '13px' }}
+                      >
+                        Upload Job Description
+                      </Typography>
+                    </Stack>
+                    <DropZone
+                      onDragEnter={(e) => handleDrag(e, setIsDraggingJobDesc)}
+                      onDragLeave={(e) => handleDrag(e, setIsDraggingJobDesc)}
+                      onDragOver={(e) => handleDrag(e, setIsDraggingJobDesc)}
+                      onDrop={handleDropJobDesc}
+                      isDragging={isDraggingJobDesc}
+                      files={jobDescFiles}
+                      title="Drag & Drop here (PDF/DOCX)"
+                      inputRef={jobDescInputRef}
+                      type="Job Description"
+                    />
+                    <TextField
+                      multiline
+                      rows={5}
+                      value={jobDescText}
+                      onChange={(e) => setJobDescText(e.target.value)}
+                      placeholder="Enter Job description here"
+                      fullWidth
+                    />
+                  </Stack>
+                </Paper>
+
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={!resumeText || !jobDescText}
+                  fullWidth
+                >
+                  START INTERVIEW NOW
                 </Button>
-              </Box>
 
-            </Box>
-          </Container>
-        </Stack>
+                <Button
+                  variant="contained"
+                  disabled={!resumeText || !jobDescText}
+                  fullWidth
+                  onClick={handleDialogOpen}
+                >
+                  SAVE SESSION
+                </Button>
+
+                <Container margin="20px" />
+
+              </Stack>
+            </form>
+
+            {/* Loading Dialog */}
+            <Dialog open={loading}>
+              <DialogContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <CircularProgress />
+                <Typography>{loadingMessage}</Typography>
+              </DialogContent>
+            </Dialog>
+
+            <CandidateFormDialog
+              open={openDialog}
+              onClose={handleDialogClose}
+              resume={resumeText}
+              jobDesc={jobDescText} />
+          </Box>
+        </Container>
       </Stack>
     </ThemeProvider>
   );

@@ -1,96 +1,96 @@
-import React, { useState } from 'react';
-import CssBaseline from '@mui/material/CssBaseline';
-import Stack from '@mui/material/Stack';
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { TextField, Button, Container, Typography, Box, Toolbar, AppBar, CircularProgress } from '@mui/material';
+import {
+  TextField,
+  Button,
+  Container,
+  Typography,
+  Box,
+  Stack,
+  CssBaseline,
+  CircularProgress,
+  Divider,
+  Alert,
+} from '@mui/material';
 import Content from './Content';
-import Divider from '@mui/material/Divider';
 
-export default function Login({ setIsAuthenticated }) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [message, setMessage] = useState('');
+// Move theme definitions outside component to prevent recreation on each render
+const lightTheme = createTheme({
+  palette: {
+    mode: 'light',
+    background: {
+      default: '#FFFFFF',
+      paper: '#FFFFFF',
+    },
+    primary: {
+      main: '#000000',
+    },
+    secondary: {
+      main: '#FFFFFF',
+    },
+  },
+});
+
+// For Vite, use import.meta.env instead of process.env
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://mockaibackend.vercel.app';
+
+const Login = ({ setIsAuthenticated }) => {
+  const [formData, setFormData] = useState({
+    username: '',
+    password: '',
+  });
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-
   const navigate = useNavigate();
 
-  const BASE_URL = "https://mockaibackend.vercel.app";
+  const handleInputChange = useCallback((event) => {
+    const { name, value } = event.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  }, []);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setError('');
     setLoading(true);
-    // Handle sign-in
+
     try {
-      const response = await fetch(BASE_URL + '/login', {
+      const response = await fetch(`${BASE_URL}/login`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded', // Change to x-www-form-urlencoded
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: new URLSearchParams({ username, password }), // Send data as form data
+        body: new URLSearchParams(formData),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        // Store the access token (you may want to store it in localStorage or context)
-        localStorage.setItem('access_token', data.access_token);
-        localStorage.setItem('client_id', data.client_id)
-        setMessage('Login successful!');
+      const data = await response.json();
 
-        console.log(localStorage.getItem('access_token'))
-        setIsAuthenticated(true);
-        // Redirect to login page or another page
-        navigate('/landing');
-      } else {
-        const data = await response.json();
-        setMessage(data.detail || 'Invalid username or password');
+      if (!response.ok) {
+        throw new Error(data.detail || 'Authentication failed');
       }
+
+      // Store tokens securely
+      localStorage.setItem('access_token', data.access_token);
+      localStorage.setItem('client_id', data.client_id);
+
+      setIsAuthenticated(true);
+      navigate('/landing');
     } catch (error) {
-      setMessage('An error occurred. Please try again.');
+      setError(error.message || 'An error occurred during login. Please try again.');
+      console.error('Login error:', error);
     } finally {
-      setLoading(false); // Set loading back to false after the attempt
+      setLoading(false);
     }
   };
-
-  const darkTheme = createTheme({
-    typography: {
-      fontSize: 15,
-      fontFamily: 'Arial',
-    },
-    palette: {
-      mode: 'dark',
-      background: {
-        default: '#0E1117',
-        paper: '#0E1117',
-      },
-      primary: {
-        main: '#60A5FA',
-      }
-    },
-  });
-
-  const lightTheme = createTheme({
-    palette: {
-      mode: 'light',
-      background: {
-        default: '#FFFFFF',
-        paper: '#FFFFFF',
-      },
-      primary: {
-        main: '#000000',
-      },
-      secondary: {
-        main: '#FFFFFF'
-      }
-    },
-  });
 
   return (
     <ThemeProvider theme={lightTheme}>
       <CssBaseline enableColorScheme />
-      {/* <ColorModeSelect sx={{ position: 'fixed', top: '1rem', right: '1rem' }} /> */}
       <Stack
-        marginTop={"50px"}
+        marginTop="50px"
         direction="column"
         component="main"
       >
@@ -104,7 +104,7 @@ export default function Login({ setIsAuthenticated }) {
           }}
         >
           <Content />
-          <Divider orientation='vertical' variant="middle" flexItem />
+          <Divider orientation="vertical" variant="middle" flexItem />
           <Container maxWidth="xs" sx={{ height: '100vh' }}>
             <Box
               sx={{
@@ -112,23 +112,29 @@ export default function Login({ setIsAuthenticated }) {
                 flexDirection: 'column',
                 alignItems: 'center',
                 marginTop: 10,
-                height: '100%'
+                height: '100%',
               }}
             >
               <Typography component="h1" variant="h5">
                 Sign In
               </Typography>
-              <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+              {error && (
+                <Alert severity="error" sx={{ mt: 2, width: '100%' }}>
+                  {error}
+                </Alert>
+              )}
+              <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
                 <TextField
                   margin="normal"
                   required
                   fullWidth
-                  id="email"
+                  id="username"
                   label="Email Address"
-                  name="email"
-                  fontSize="14px"
+                  name="username"
+                  // type="email"
                   autoComplete="email"
-                  onChange={(e) => setUsername(e.target.value)}
+                  value={formData.username}
+                  onChange={handleInputChange}
                   autoFocus
                   sx={{ mt: 3, borderRadius: 2 }}
                 />
@@ -140,17 +146,17 @@ export default function Login({ setIsAuthenticated }) {
                   label="Password"
                   type="password"
                   id="password"
-                  fontSize="14px"
                   autoComplete="current-password"
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={formData.password}
+                  onChange={handleInputChange}
                   sx={{ mt: 3, mb: 1, borderRadius: 2 }}
                 />
                 <Button
                   type="submit"
                   fullWidth
                   variant="contained"
+                  disabled={loading || !formData.username || !formData.password}
                   sx={{ height: 45, mt: 3, mb: 2, borderRadius: 2 }}
-                  disabled={loading} // Disable button while loading
                 >
                   {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
                 </Button>
@@ -161,4 +167,6 @@ export default function Login({ setIsAuthenticated }) {
       </Stack>
     </ThemeProvider>
   );
-}
+};
+
+export default Login;

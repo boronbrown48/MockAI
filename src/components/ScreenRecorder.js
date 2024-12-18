@@ -10,54 +10,73 @@ const useScreenRecorder = () => {
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef(null);
   const streamRef = useRef(null);
-  const chunksRef = useRef([]); // Store audio chunks for each recording session
+  const chunksRef = useRef([]);
 
-  // Define the function to start screen capture (video + audio)
+  // Check if running on MacOS
+  const isMacOS = () => {
+    return navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+  };
+
+  // Get available audio devices
+  const getAudioDevices = async () => {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    return devices.filter((device) => device.kind === "audioinput");
+  };
+
   const startScreenCapture = async () => {
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: {
-          width: 40,
-          height: 60,
-          frameRate: 15,
-        },
-        audio: true,
-      });
+      if (isMacOS()) {
+        // MacOS-specific handling
+        const audioDevices = await getAudioDevices();
+        const blackholeDevice = audioDevices.find((device) =>
+          device.label.toLowerCase().includes("blackhole 2ch")
+        );
 
-      // Check if the stream contains an audio track
-      const audioTrack = stream.getAudioTracks()[0];
-      if (!audioTrack) {
-        throw new Error("No audio track found in the screen capture stream");
+        const constraints = {
+          audio: blackholeDevice
+            ? { deviceId: { exact: blackholeDevice.deviceId } }
+            : true,
+          video: false,
+        };
+
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        return stream;
+      } else {
+        // Windows/Other OS handling - use original screen capture logic
+        const stream = await navigator.mediaDevices.getDisplayMedia({
+          video: {
+            width: 40,
+            height: 60,
+            frameRate: 15,
+          },
+          audio: true,
+        });
+
+        const audioTrack = stream.getAudioTracks()[0];
+        if (!audioTrack) {
+          throw new Error("No audio track found in the screen capture stream");
+        }
+
+        return stream;
       }
-
-      return stream;
     } catch (err) {
-      console.error("Error accessing screen capture", err);
+      console.error("Error accessing audio/screen capture", err);
       throw err;
     }
   };
 
-  // Start recording video and audio from the screen
+  // Rest of the code remains the same...
   const startRecording = (stream) => {
     const mediaRecorder = new MediaRecorder(stream);
-    chunksRef.current = []; // Reset chunks for new recording
+    chunksRef.current = [];
 
     mediaRecorder.ondataavailable = (e) => {
-      chunksRef.current.push(e.data); // Add new chunks
+      chunksRef.current.push(e.data);
     };
 
     mediaRecorder.onstop = async () => {
       const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-      // const url = URL.createObjectURL(blob);
-      // const videoElement = document.createElement("video");
-      // videoElement.src = url;
-      // videoElement.controls = true;
-      // document.body.appendChild(videoElement);
-
-      // Clear the chunks array after each stop to prevent reusing old audio
       chunksRef.current = [];
-
-      // Call transcription when the recording stops
       await handleSilenceDetected(blob);
     };
 
@@ -65,7 +84,6 @@ const useScreenRecorder = () => {
     return mediaRecorder;
   };
 
-  // Detect silence in the audio stream
   const detectSilence = (stream, mediaRecorder) => {
     const audioContext = new (window.AudioContext ||
       window.webkitAudioContext)();
@@ -85,7 +103,6 @@ const useScreenRecorder = () => {
     const checkSilence = () => {
       analyser.getByteFrequencyData(dataArray);
 
-      // Calculate the average volume
       let sum = 0;
       for (let i = 0; i < bufferLength; i++) {
         sum += dataArray[i];
@@ -112,26 +129,24 @@ const useScreenRecorder = () => {
         }
       }
 
-      // Use requestAnimationFrame for more efficient audio checks
       requestAnimationFrame(checkSilence);
     };
 
     checkSilence();
   };
 
-  // Handle silence detection and initiate transcription
   const handleSilenceDetected = async (blob) => {
     try {
       const transcriptionText = await transcribeAudioFile(blob);
-      setTranscription(transcriptionText); // Update transcription state
+      if (transcriptionText != "Thank you.")
+        setTranscription(transcriptionText);
     } catch (error) {
       console.error("Error in transcription:", error);
     }
   };
 
-  // Start recording process and listen for silence
   const start = async () => {
-    const stream = await startScreenCapture(); // Call the function here
+    const stream = await startScreenCapture();
     streamRef.current = stream;
 
     const mediaRecorder = startRecording(stream);
@@ -155,8 +170,6 @@ const useScreenRecorder = () => {
   };
 
   useEffect(() => {
-    // start();
-
     return () => {
       if (
         mediaRecorderRef.current &&
@@ -164,14 +177,12 @@ const useScreenRecorder = () => {
       ) {
         mediaRecorderRef.current.stop();
       }
-
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
       }
     };
   }, []);
 
-  // Function to convert audio buffer to WAV and send it to Groq for transcription
   const transcribeAudioFile = async (file) => {
     if (!file) throw new Error("No file provided");
 
@@ -181,7 +192,7 @@ const useScreenRecorder = () => {
 
     return new Promise((resolve, reject) => {
       reader.onload = async () => {
-        const audioFileAsBuffer = reader.result; // ArrayBuffer
+        const audioFileAsBuffer = reader.result;
 
         try {
           const decodedAudioData = await audioContext.decodeAudioData(
@@ -190,41 +201,33 @@ const useScreenRecorder = () => {
           const duration = decodedAudioData.duration;
           const sampleRate = 16000;
 
-          // Create an OfflineAudioContext with the correct length
           const offlineAudioContext = new OfflineAudioContext(
             1,
             sampleRate * duration,
             sampleRate
           );
 
-          // Create a buffer source
           const soundSource = offlineAudioContext.createBufferSource();
           soundSource.buffer = decodedAudioData;
 
-          // Create a band-pass filter using the same OfflineAudioContext
           const bandPassFilter = offlineAudioContext.createBiquadFilter();
           bandPassFilter.type = "bandpass";
-          bandPassFilter.frequency.value = 1000; // Center frequency for voice
-          bandPassFilter.Q.value = 1; // Bandwidth
+          bandPassFilter.frequency.value = 1000;
+          bandPassFilter.Q.value = 1;
 
-          // Create a gain node to enhance audio
           const gainNode = offlineAudioContext.createGain();
-          gainNode.gain.value = 1.5; // Increase volume
+          gainNode.gain.value = 1.5;
 
-          // Connect the nodes: source -> filter -> gain -> destination
           soundSource.connect(bandPassFilter);
           bandPassFilter.connect(gainNode);
           gainNode.connect(offlineAudioContext.destination);
           soundSource.start();
 
-          // Render the audio
           const renderedBuffer = await offlineAudioContext.startRendering();
 
-          // Convert to WAV
           const wavData = audioBufferToWav(renderedBuffer);
           const wavBlob = new Blob([wavData], { type: "audio/wav" });
 
-          // Send to Groq AI for transcription
           const transcriptionText = await sendToGroqAI(wavBlob);
           resolve(transcriptionText);
         } catch (err) {
