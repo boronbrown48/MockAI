@@ -107,7 +107,7 @@ const useScreenRecorder = () => {
     let silenceDetected = false;
     let lastNonSilentTime = Date.now();
     const silenceThreshold = 10;
-    const silenceTimeout = 1500;
+    const silenceTimeout = 3000;
 
     const checkSilence = () => {
       analyser.getByteFrequencyData(dataArray);

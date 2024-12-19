@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-d
 import Login from './components/Login';
 import Landing from './components/landing';
 import Chatbot from './components/Chatbot';
-import ResumeGen from './components/ResumeGen';
+import ResumeGenerator from './components/ResumeGen';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -63,7 +63,7 @@ function App() {
 
             <Route
               path="/resume"
-              element={<ResumeGen setIsAuthenticated={setIsAuthenticated} />}
+              element={<ResumeGenerator setIsAuthenticated={setIsAuthenticated} />}
             />
           </>
         )}
