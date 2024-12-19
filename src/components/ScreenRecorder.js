@@ -167,6 +167,7 @@ const useScreenRecorder = () => {
               silenceDetected
           );
           silenceDetected = false;
+          lastNonSilentTime = 0;
           console.log("Audio resumed, restarting recording...");
           mediaRecorder.start();
         }
