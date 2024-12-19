@@ -106,7 +106,7 @@ const useScreenRecorder = () => {
 
     let silenceDetected = false;
     let lastNonSilentTime = Date.now();
-    const silenceThreshold = 10;
+    const silenceThreshold = 20;
     const silenceTimeout = 3000;
 
     const checkSilence = () => {
@@ -122,12 +122,12 @@ const useScreenRecorder = () => {
       const currentTime = Date.now();
 
       if (averageVolume < silenceThreshold) {
-        console.log(
-          "[1] currentTime = " +
-            currentTime +
-            " || lastNonSilentTime = " +
-            lastNonSilentTime
-        );
+        // console.log(
+        //   "[1] currentTime = " +
+        //     currentTime +
+        //     " || lastNonSilentTime = " +
+        //     lastNonSilentTime
+        // );
         if (
           !silenceDetected &&
           currentTime - lastNonSilentTime >= silenceTimeout
@@ -136,19 +136,31 @@ const useScreenRecorder = () => {
             "[2] currentTime = " +
               currentTime +
               " || lastNonSilentTime = " +
-              lastNonSilentTime
+              lastNonSilentTime +
+              "Silence Detected: " +
+              silenceDetected
           );
           silenceDetected = true;
           console.log("Silence detected, stopping recording...");
           mediaRecorder.stop();
         }
       } else {
+        console.log(
+          "[4] currentTime = " +
+            currentTime +
+            " || lastNonSilentTime = " +
+            lastNonSilentTime +
+            "Silence Detected: " +
+            silenceDetected
+        );
         if (silenceDetected) {
           console.log(
             "[3] currentTime = " +
               currentTime +
               " || lastNonSilentTime = " +
-              lastNonSilentTime
+              lastNonSilentTime +
+              "Silence Detected: " +
+              silenceDetected
           );
           silenceDetected = false;
           lastNonSilentTime = currentTime;
