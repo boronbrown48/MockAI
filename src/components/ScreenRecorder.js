@@ -122,16 +122,34 @@ const useScreenRecorder = () => {
       const currentTime = Date.now();
 
       if (averageVolume < silenceThreshold) {
+        console.log(
+          "[1] currentTime = " +
+            currentTime +
+            " || lastNonSilentTime = " +
+            lastNonSilentTime
+        );
         if (
           !silenceDetected &&
           currentTime - lastNonSilentTime >= silenceTimeout
         ) {
+          console.log(
+            "[2] currentTime = " +
+              currentTime +
+              " || lastNonSilentTime = " +
+              lastNonSilentTime
+          );
           silenceDetected = true;
           console.log("Silence detected, stopping recording...");
           mediaRecorder.stop();
         }
       } else {
         if (silenceDetected) {
+          console.log(
+            "[3] currentTime = " +
+              currentTime +
+              " || lastNonSilentTime = " +
+              lastNonSilentTime
+          );
           silenceDetected = false;
           lastNonSilentTime = currentTime;
           console.log("Audio resumed, restarting recording...");

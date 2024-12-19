@@ -48,7 +48,7 @@ const CodeBlockSection = ({ code, language }) => (
 
 // Function to extract code blocks and their languages
 const extractCodeBlocks = (content) => {
-    console.log("extractCodeBlocks:", content);
+    // console.log("extractCodeBlocks:", content);
     const codeBlockRegex = /```(\w+)\s*([\s\S]*?)```/g;
     const parts = [];
     let lastIndex = 0;
@@ -140,7 +140,7 @@ const Chatbot = ({ setIsAuthenticated }) => {
         // Define an inner async function
         const fetchData = async () => {
             if (transcription) {
-                console.log("Sending to chatbot:", transcription);
+                // console.log("Sending to chatbot:", transcription);
                 await sendMessage(transcription);
             }
         };
@@ -174,7 +174,7 @@ const Chatbot = ({ setIsAuthenticated }) => {
     const handleSendMessage = async () => {
         if (!inputMessage.trim()) return;
 
-        console.log("Input Message:", inputMessage);
+        // console.log("Input Message:", inputMessage);
         setInputMessage(''); // Clear input immediately
         await sendMessage(inputMessage);
     }
@@ -187,7 +187,7 @@ const Chatbot = ({ setIsAuthenticated }) => {
     }, [messages]);
 
     const renderMessageContent = (content) => {
-        console.log("renderMessageContent:", content);
+        // console.log("renderMessageContent:", content);
         const parts = extractCodeBlocks(content);
 
         return (
@@ -212,7 +212,7 @@ const Chatbot = ({ setIsAuthenticated }) => {
 
     // Function to format content and convert bold text
     const formatContent = (content) => {
-        console.log("formatContent:", content);
+        // console.log("formatContent:", content);
         // Split content by new lines
         return content.split('\n').map((line, lineIndex) => (
             <React.Fragment key={lineIndex}>
@@ -259,7 +259,7 @@ const Chatbot = ({ setIsAuthenticated }) => {
             navigate('/');
 
         } catch (error) {
-            console.error('Error during logout:', error.message);
+            // console.error('Error during logout:', error.message);
             // Handle logout error (e.g., show a notification)
         }
     };
