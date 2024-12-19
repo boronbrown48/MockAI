@@ -68,15 +68,24 @@ const useScreenRecorder = () => {
   // Rest of the code remains the same...
   const startRecording = (stream) => {
     const mediaRecorder = new MediaRecorder(stream);
-    chunksRef.current = [];
+    chunksRef.current = []; // Reset chunks for new recording
 
     mediaRecorder.ondataavailable = (e) => {
-      chunksRef.current.push(e.data);
+      chunksRef.current.push(e.data); // Add new chunks
     };
 
     mediaRecorder.onstop = async () => {
       const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+      // const url = URL.createObjectURL(blob);
+      // const videoElement = document.createElement("video");
+      // videoElement.src = url;
+      // videoElement.controls = true;
+      // document.body.appendChild(videoElement);
+
+      // Clear the chunks array after each stop to prevent reusing old audio
       chunksRef.current = [];
+
+      // Call transcription when the recording stops
       await handleSilenceDetected(blob);
     };
 
@@ -103,6 +112,7 @@ const useScreenRecorder = () => {
     const checkSilence = () => {
       analyser.getByteFrequencyData(dataArray);
 
+      // Calculate the average volume
       let sum = 0;
       for (let i = 0; i < bufferLength; i++) {
         sum += dataArray[i];
@@ -129,6 +139,7 @@ const useScreenRecorder = () => {
         }
       }
 
+      // Use requestAnimationFrame for more efficient audio checks
       requestAnimationFrame(checkSilence);
     };
 
@@ -138,15 +149,15 @@ const useScreenRecorder = () => {
   const handleSilenceDetected = async (blob) => {
     try {
       const transcriptionText = await transcribeAudioFile(blob);
-      if (transcriptionText != "Thank you.")
-        setTranscription(transcriptionText);
+      setTranscription(transcriptionText); // Update transcription state
     } catch (error) {
       console.error("Error in transcription:", error);
     }
   };
 
+  // Start recording process and listen for silence
   const start = async () => {
-    const stream = await startScreenCapture();
+    const stream = await startScreenCapture(); // Call the function here
     streamRef.current = stream;
 
     const mediaRecorder = startRecording(stream);
@@ -170,6 +181,8 @@ const useScreenRecorder = () => {
   };
 
   useEffect(() => {
+    // start();
+
     return () => {
       if (
         mediaRecorderRef.current &&
@@ -177,6 +190,7 @@ const useScreenRecorder = () => {
       ) {
         mediaRecorderRef.current.stop();
       }
+
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
       }
@@ -192,7 +206,7 @@ const useScreenRecorder = () => {
 
     return new Promise((resolve, reject) => {
       reader.onload = async () => {
-        const audioFileAsBuffer = reader.result;
+        const audioFileAsBuffer = reader.result; // ArrayBuffer
 
         try {
           const decodedAudioData = await audioContext.decodeAudioData(
@@ -201,33 +215,29 @@ const useScreenRecorder = () => {
           const duration = decodedAudioData.duration;
           const sampleRate = 16000;
 
+          // Create an OfflineAudioContext for resampling
           const offlineAudioContext = new OfflineAudioContext(
             1,
             sampleRate * duration,
             sampleRate
           );
 
+          // Create a buffer source
           const soundSource = offlineAudioContext.createBufferSource();
           soundSource.buffer = decodedAudioData;
 
-          const bandPassFilter = offlineAudioContext.createBiquadFilter();
-          bandPassFilter.type = "bandpass";
-          bandPassFilter.frequency.value = 1000;
-          bandPassFilter.Q.value = 1;
-
-          const gainNode = offlineAudioContext.createGain();
-          gainNode.gain.value = 1.5;
-
-          soundSource.connect(bandPassFilter);
-          bandPassFilter.connect(gainNode);
-          gainNode.connect(offlineAudioContext.destination);
+          // Connect the source directly to the destination
+          soundSource.connect(offlineAudioContext.destination);
           soundSource.start();
 
+          // Render the audio
           const renderedBuffer = await offlineAudioContext.startRendering();
 
+          // Convert to WAV
           const wavData = audioBufferToWav(renderedBuffer);
           const wavBlob = new Blob([wavData], { type: "audio/wav" });
 
+          // Send to Groq AI for transcription
           const transcriptionText = await sendToGroqAI(wavBlob);
           resolve(transcriptionText);
         } catch (err) {
