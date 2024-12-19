@@ -141,6 +141,7 @@ const useScreenRecorder = () => {
               silenceDetected
           );
           silenceDetected = true;
+          lastNonSilentTime = currentTime;
           console.log("Silence detected, stopping recording...");
           mediaRecorder.stop();
         }
@@ -153,7 +154,10 @@ const useScreenRecorder = () => {
             "Silence Detected: " +
             silenceDetected
         );
-        if (silenceDetected) {
+        if (
+          silenceDetected &&
+          currentTime - lastNonSilentTime >= silenceTimeout
+        ) {
           console.log(
             "[3] currentTime = " +
               currentTime +
@@ -163,7 +167,6 @@ const useScreenRecorder = () => {
               silenceDetected
           );
           silenceDetected = false;
-          lastNonSilentTime = currentTime;
           console.log("Audio resumed, restarting recording...");
           mediaRecorder.start();
         }
