@@ -106,8 +106,8 @@ const useScreenRecorder = () => {
 
     let silenceDetected = false;
     let lastNonSilentTime = Date.now();
-    const silenceThreshold = 20;
-    const silenceTimeout = 3000;
+    const silenceThreshold = 5;
+    const silenceTimeout = 500;
 
     const checkSilence = () => {
       analyser.getByteFrequencyData(dataArray);
@@ -122,12 +122,6 @@ const useScreenRecorder = () => {
       const currentTime = Date.now();
 
       if (averageVolume < silenceThreshold) {
-        // console.log(
-        //   "[1] currentTime = " +
-        //     currentTime +
-        //     " || lastNonSilentTime = " +
-        //     lastNonSilentTime
-        // );
         if (
           !silenceDetected &&
           currentTime - lastNonSilentTime >= silenceTimeout
@@ -137,40 +131,28 @@ const useScreenRecorder = () => {
               currentTime +
               " || lastNonSilentTime = " +
               lastNonSilentTime +
-              "Silence Detected: " +
+              " || Silence Detected: " +
               silenceDetected
           );
           silenceDetected = true;
-          lastNonSilentTime = currentTime;
           console.log("Silence detected, stopping recording...");
           mediaRecorder.stop();
         }
       } else {
-        console.log(
-          "[4] currentTime = " +
-            currentTime +
-            " || lastNonSilentTime = " +
-            lastNonSilentTime +
-            "Silence Detected: " +
-            silenceDetected
-        );
-        if (
-          silenceDetected &&
-          currentTime - lastNonSilentTime >= silenceTimeout
-        ) {
+        if (silenceDetected) {
           console.log(
             "[3] currentTime = " +
               currentTime +
               " || lastNonSilentTime = " +
               lastNonSilentTime +
-              "Silence Detected: " +
+              "  || Silence Detected: " +
               silenceDetected
           );
           silenceDetected = false;
-          lastNonSilentTime = 0;
           console.log("Audio resumed, restarting recording...");
           mediaRecorder.start();
         }
+        lastNonSilentTime = currentTime;
       }
 
       // Use requestAnimationFrame for more efficient audio checks
