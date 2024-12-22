@@ -14,6 +14,7 @@ import {
   Alert,
 } from '@mui/material';
 import Content from './Content';
+import { BASE_URL_SETTING } from './../setting';
 
 // Move theme definitions outside component to prevent recreation on each render
 const lightTheme = createTheme({
@@ -33,7 +34,7 @@ const lightTheme = createTheme({
 });
 
 // For Vite, use import.meta.env instead of process.env
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://mockaibackend.vercel.app';
+const BASE_URL = import.meta.env.VITE_API_URL || BASE_URL_SETTING;
 
 const Login = ({ setIsAuthenticated }) => {
   const [formData, setFormData] = useState({

@@ -36,6 +36,7 @@ import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import { useTheme } from '@mui/material/styles';
 import CandidateFormDialog from './SessionDialog';
 import LandingContent from './LandingContent';
+import { BASE_URL_SETTING } from './../setting';
 
 export default function Landing({ handleAccessChat, setIsAuthenticated }) {
   const [loading, setLoading] = useState(false);
@@ -53,7 +54,7 @@ export default function Landing({ handleAccessChat, setIsAuthenticated }) {
 
   const navigate = useNavigate();
 
-  const BASE_URL = "https://mockaibackend.vercel.app";
+  const BASE_URL = BASE_URL_SETTING;
 
 
   const handleSubmit = async (event) => {

@@ -34,7 +34,7 @@ import StopCircleOutlinedIcon from '@mui/icons-material/StopCircleOutlined';
 import DonutSmallIcon from '@mui/icons-material/DonutSmall';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import SendRoundedIcon from '@mui/icons-material/SendRounded';
-
+import { BASE_URL_SETTING } from './../setting'
 import './Chatbot.css';
 
 // CodeBlockSection component for rendering code
@@ -122,7 +122,7 @@ const MessageContainer = styled(Box)(({ theme }) => ({
 
 const Chatbot = ({ setIsAuthenticated }) => {
     const ABLY_API_KEY = "iyQ8_g.iH_Akw:gBcPCX3_ql6bHz5-9ns4CAA3KuK_kRVd-lNpvNYalbk";
-    const BASE_URL = "https://mockaibackend.vercel.app";
+    const BASE_URL = BASE_URL_SETTING;
     const messagesEndRef = useRef(null);
     const { messages,
         inputMessage,

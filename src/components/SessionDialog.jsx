@@ -9,12 +9,13 @@ import {
     Grid,
     Typography,
 } from '@mui/material';
+import { BASE_URL_SETTING } from './../setting';
 
 export default function CandidateFormDialog({ open, onClose, resume, jobDesc }) {
     const [candidateName, setCandidateName] = useState('');
     const [role, setRole] = useState('');
 
-    const BASE_URL = "https://mockaibackend.vercel.app";
+    const BASE_URL = BASE_URL_SETTING;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
