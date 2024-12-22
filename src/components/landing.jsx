@@ -17,19 +17,25 @@ import {
   useMediaQuery,
   Dialog,
   DialogContent,
-  Divider
+  Divider,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material';
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import ClearIcon from "@mui/icons-material/Clear";
 import PlayCircleFilledWhiteOutlinedIcon from '@mui/icons-material/PlayCircleFilledWhiteOutlined';
 import DeleteOutlinedIcon from '@mui/icons-material/DeleteOutlined';
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+
 import pdfToText from './PdfOcr'; // Create a URL for the file
 import { extractTextFromDocx } from "./DocxExtractor";
 import DonutSmallIcon from '@mui/icons-material/DonutSmall';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import { useTheme } from '@mui/material/styles';
 import CandidateFormDialog from './SessionDialog';
+import LandingContent from './LandingContent';
 
 export default function Landing({ handleAccessChat, setIsAuthenticated }) {
   const [loading, setLoading] = useState(false);
@@ -52,48 +58,46 @@ export default function Landing({ handleAccessChat, setIsAuthenticated }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    localStorage.setItem('resumeData', resumeText);
+    localStorage.setItem('jdData', jobDescText);
 
-    setLoading(true); // Start loading
-
-    // Access the token from local storage
-    const storedToken = localStorage.getItem('access_token');
-
-    try {
-      const response = await fetch(BASE_URL + '/extract-resume', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json', // Change to x-www-form-urlencoded
-          'Authorization': `Bearer ${storedToken}`, // Include the token in the Authorization header
-        },
-        body: JSON.stringify({
-          resume: resumeText,
-          // jobDescription: jobDescText,
-        }), // Send data as form data
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log(data)
-        localStorage.setItem('resumeData', resumeText);
-        localStorage.setItem('jdData', jobDescText);
-
-        setIsAuthenticated(true);
-        // Redirect to login page or another page
-        handleAccessChat();
-        navigate('/chat');
-      } else {
-        const data = await response.json();
-        console.error(data)
-      }
-    } catch (error) {
-      console.error('An error occurred. Please try again.');
-    } finally {
-      setLoading(false); // Reset loading state when done
-    }
+    setIsAuthenticated(true);
+    // Redirect to login page or another page
+    handleAccessChat();
+    navigate('/chat');
   };
 
+  const deleteSessionData = async (sessionId) => {
+    const requestData = {
+      client_id: localStorage.getItem('client_id'),
+      session_id: sessionId,
+    };
+
+    try {
+      const response = await fetch(
+        `${BASE_URL}/delete_session?client_id=${requestData.client_id}&session_id=${requestData.session_id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      // Check if the response is successful
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error(errorData)
+      } else {
+        const data = await response.json();
+        console.log(data)
+      }
+    } catch (err) {
+      console.log('Network error occurred');
+    }
+  }
+
   const getSessionsList = async (clientId) => {
-    console.log(clientId)
     try {
       // Make a GET request to the /get_sessions_list endpoint with the client_id as a query parameter
       const response = await fetch(`${BASE_URL}/get_sessions_list?client_id=${clientId}`);
@@ -352,6 +356,7 @@ export default function Landing({ handleAccessChat, setIsAuthenticated }) {
 
   // Handle the "Delete" button click
   const handleDelete = (id) => {
+    deleteSessionData(id)
     const updatedEntries = entries.filter((entry) => entry.id !== id);
     setEntries(updatedEntries);
   };
@@ -366,6 +371,115 @@ export default function Landing({ handleAccessChat, setIsAuthenticated }) {
     setOpenDialog(false);
   };
 
+  const formatDate = (isoDate) => {
+    const date = new Date(isoDate);
+
+    // Extract day, month, and year
+    const day = String(date.getDate()).padStart(2, '0'); // Add leading zero if needed
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+    const year = date.getFullYear();
+
+    return `${day}-${month}-${year}`; // Construct the desired format
+  };
+
+  const cellStyles = {
+    titleCell: {
+      padding: '5px', // Reduced padding for header cells
+      backgroundColor: '#F2F2F2',
+      fontWeight: 'bold',
+      fontSize: '14px',
+      textAlign: 'left',
+    },
+    cell: {
+      padding: '5px', // Reduced padding for body cells
+      fontSize: '14px', // Slightly smaller font size
+      lineHeight: '1.2', // Reduced line height for compact appearance
+      borderBottom: '1px solid grey', // Only the bottom border is visible
+      borderColor: "#CCCCCC",
+      textAlign: 'center',
+    },
+    row: {
+      height: 'auto', // Let the row adjust based on reduced padding
+    },
+  };
+
+  const SavedSessions = ({ entries, handleStart, handleDelete }) => {
+    return (
+      <Accordion>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="panel-content" id="panel-header">
+          <Typography sx={{ fontWeight: "bold", fontSize: "14px" }}>
+            SAVED SESSIONS LIST
+          </Typography>
+        </AccordionSummary>
+        <AccordionDetails sx={{ padding: '16px' }}>
+          <table
+            style={{
+              width: '100%',
+              borderCollapse: 'collapse',
+            }}
+          >
+            <thead>
+              <tr>
+                <th style={styles.titleCell}>
+                  <Typography variant="subtitle1" fontWeight="bold" fontSize={"14px"} paddingLeft={"10px"} backgroundColor='#F2F2F2'>
+                    Name
+                  </Typography>
+                </th>
+                <th style={styles.titleCell}>
+                  <Typography variant="subtitle1" fontWeight="bold" fontSize={"14px"} paddingLeft={"10px"} backgroundColor='#F2F2F2'>
+                    Title
+                  </Typography>
+                </th>
+                <th style={styles.titleCell}>
+                  <Typography variant="subtitle1" fontWeight="bold" fontSize={"14px"} paddingLeft={"10px"} backgroundColor='#F2F2F2'>
+                    Created
+                  </Typography>
+                </th>
+                <th style={styles.titleCell}>
+                  <Typography variant="subtitle1" fontWeight="bold" fontSize={"14px"} paddingLeft={"10px"} backgroundColor='#F2F2F2'>
+                    Actions
+                  </Typography>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.isArray(entries) && entries.length > 0 ? (
+                entries.map((entry) => (
+                  <tr key={entry.id} style={cellStyles.row}>
+                    <td style={cellStyles.cell}>
+                      <Typography fontSize={"12px"}>{entry.candidate_name}</Typography>
+                    </td>
+                    <td style={cellStyles.cell}>
+                      <Typography fontSize={"12px"}>{entry.role}</Typography>
+                    </td>
+                    <td style={cellStyles.cell}>
+                      <Typography fontSize={"12px"}>{formatDate(entry.created_at)}</Typography>
+                    </td>
+                    <td style={cellStyles.cell}>
+                      <IconButton onClick={() => handleStart(entry.id)} sx={{ color: '#427ef5' }}>
+                        <PlayCircleFilledWhiteOutlinedIcon />
+                      </IconButton>
+                      <IconButton onClick={() => handleDelete(entry.id)} sx={{ color: 'grey' }}>
+                        <DeleteOutlinedIcon />
+                      </IconButton>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="4" style={{ textAlign: 'center', ...styles.cell }}>
+                    No entries
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </AccordionDetails>
+      </Accordion>
+    );
+  }
+
+
   // MediaQuery hook to check if the screen is mobile (xs) or larger
   const isMobile = useMediaQuery('(max-width:600px)'); // Adjust this breakpoint as needed
   const theme = useTheme();
@@ -379,8 +493,24 @@ export default function Landing({ handleAccessChat, setIsAuthenticated }) {
           <IconButton>
             <DonutSmallIcon />
           </IconButton>
-          <Typography variant="title" component="div" sx={{ flexGrow: 1, fontWeight: 'bold', marginLeft: '10px' }}>
+          <Typography variant="title"
+            component="div"
+            sx={{
+              flexGrow: 1,
+              fontWeight: 'bold',
+              marginLeft: '10px',
+              color: '#00AEEF'
+            }}>
             TITLE
+          </Typography>
+
+          <Typography
+            sx={{
+              flexGrow: 1,
+              alignContent: "center",
+              fontSize: 14,
+            }}>
+            INTERVIEW PRE-CHECK
           </Typography>
           {/* Right side: Logout Button */}
           {!isMobile && (
@@ -401,201 +531,139 @@ export default function Landing({ handleAccessChat, setIsAuthenticated }) {
         </Toolbar>
       </AppBar>
       {/* <ColorModeSelect sx={{ position: 'fixed', top: '1rem', right: '1rem' }} /> */}
-      <Stack direction={isSmallScreen ? 'column' : 'row'} alignItems="center" spacing={1} paddingBottom={"100px"}>
-        <Container sx={{ height: '100vh', alignItems: "center", backgroundColor: "#FFFFFF", marginTop: '90px' }}>
-          <div style={{ margin: '20px' }}>
-            <div style={{ marginTop: '100px' }} />
-            <Typography alignContent="center" sx={{ fontWeight: "bold", mb: 2 }}>
-              SAVED SESSIONS LIST
-            </Typography>
-            <table
-              style={{
-                width: '100%',
-                borderCollapse: 'collapse',
-              }}
-            >
-              <thead>
-                <tr>
-                  <th style={styles.titleCell}>
-                    <Typography variant="subtitle1" align="left" fontWeight="bold" fontSize={"14px"} backgroundColor="#F2F2F2" paddingLeft={"10px"}>
-                      Name
-                    </Typography>
-                  </th>
-                  <th style={styles.titleCell}>
-                    <Typography variant="subtitle1" align="left" fontWeight="bold" fontSize={"14px"} backgroundColor="#F2F2F2" paddingLeft={"10px"} >
-                      Title
-                    </Typography>
-                  </th>
-                  <th style={styles.titleCell}>
-                    <Typography variant="subtitle1" align="left" fontWeight="bold" fontSize={"14px"} backgroundColor="#F2F2F2" paddingLeft={"10px"}>
-                      Created
-                    </Typography>
-                  </th>
-                  <th style={styles.titleCell}>
-                    <Typography variant="subtitle1" align="left" fontWeight="bold" fontSize={"14px"} backgroundColor="#F2F2F2" paddingLeft={"10px"}>
-                      Actions
-                    </Typography>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {Array.isArray(entries) && entries.length > 0 ? (
-                  // If entries is a valid array and has data, map through it
-                  entries.map((entry) => (
-                    <tr key={entry.id} style={styles.row}>
-                      <td style={styles.cell}>
-                        <Typography fontSize={"14px"}>{entry.candidate_name}</Typography>
-                      </td>
-                      <td style={styles.cell}>
-                        <Typography fontSize={"14px"}>{entry.role}</Typography>
-                      </td>
-                      <td style={styles.cell}>
-                        <Typography fontSize={"14px"}>{entry.created_at}</Typography>
-                      </td>
-                      <td style={styles.cell}>
-                        <IconButton onClick={() => handleStart(entry.id)} style={{ marginLeft: '10px', color: '#427ef5' }}>
-                          <PlayCircleFilledWhiteOutlinedIcon />
-                        </IconButton>
-                        <IconButton
-                          onClick={() => handleDelete(entry.id)}
-                          style={{ marginLeft: '10px', color: 'red' }}
-                        >
-                          <DeleteOutlinedIcon />
-                        </IconButton>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  // If entries is an empty array or not valid, display a "No entries" message
-                  <tr>
-                    <td colSpan="4" style={{ textAlign: 'center', ...styles.cell }}>
-                      No entries
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-
-            </table>
-          </div>
+      <Stack direction={isSmallScreen ? "column" : "row"}>
+        <Container maxWidth="100%" sx={{ backgroundColor: "#FAFAFA", alignContent: "top" }} >
+          <LandingContent />
         </Container>
-        <Divider orientation={isSmallScreen ? 'horizontal' : 'vertical'} variant="middle" flexItem />
-        <Container sx={{ height: '100vh', alignItems: "center" }}>
-          <Box sx={{ padding: '10px', mx: "auto" }}>
-            <Box sx={{ marginTop: '90px' }} />
-            <Typography alignContent="center" sx={{ fontWeight: "bold", mb: 2 }}>
-              UPLOAD RESUME & JOB DESCRIPTION
-            </Typography>
-            <form onSubmit={handleSubmit}>
-              <Stack spacing={3}>
-                {/* Resume Section */}
-                <Paper elevation={2} sx={{ p: 3 }}>
-                  <Stack spacing={2}>
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <UploadFileIcon color="primary" />
-                      <Typography
-                        variant="caption"
-                        color="textPrimary"
-                        sx={{ fontWeight: "bold", fontSize: '13px' }}
-                      >
-                        Upload Resume
-                      </Typography>
-                    </Stack>
-                    <DropZone
-                      onDragEnter={(e) => handleDrag(e, setIsDraggingResume)}
-                      onDragLeave={(e) => handleDrag(e, setIsDraggingResume)}
-                      onDragOver={(e) => handleDrag(e, setIsDraggingResume)}
-                      onDrop={handleDropResume}
-                      isDragging={isDraggingResume}
-                      files={resumeFiles}
-                      title="Drag & Drop here (PDF/DOCX)"
-                      inputRef={resumeInputRef}
-                      type="Resume"
-                    />
-                    <TextField
-                      multiline
-                      rows={5}
-                      value={resumeText}
-                      onChange={(e) => setResumeText(e.target.value)}
-                      placeholder="Enter Resume here"
+        <Container>
+          <Stack direction='column' alignItems="center" spacing={1} paddingBottom={"80px"} marginTop={"80px"}>
+            <Container>
+              <SavedSessions
+                entries={entries}
+                handleStart={handleStart}
+                handleDelete={handleDelete}
+              />
+            </Container>
+            {/* <Divider orientation={isSmallScreen ? 'horizontal' : 'vertical'} variant="middle" flexItem /> */}
+            <Container sx={{ height: '100vh', alignItems: "center" }}>
+              <Box sx={{ padding: '10px', mx: "auto", maxWidth: "800px" }}>
+                <Box sx={{ marginTop: '10px' }} />
+                <Typography alignContent="center" sx={{ fontWeight: "bold", mb: 2, fontSize: "14px" }}>
+                  UPLOAD RESUME & JOB DESCRIPTION
+                </Typography>
+                <form onSubmit={handleSubmit}>
+                  <Stack spacing={3}>
+                    {/* Resume Section */}
+                    <Paper elevation={2} sx={{ p: 3 }}>
+                      <Stack spacing={2}>
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                          <UploadFileIcon color="primary" />
+                          <Typography
+                            variant="caption"
+                            color="textPrimary"
+                            sx={{ fontWeight: "bold", fontSize: '13px' }}
+                          >
+                            Upload Resume
+                          </Typography>
+                        </Stack>
+                        <DropZone
+                          onDragEnter={(e) => handleDrag(e, setIsDraggingResume)}
+                          onDragLeave={(e) => handleDrag(e, setIsDraggingResume)}
+                          onDragOver={(e) => handleDrag(e, setIsDraggingResume)}
+                          onDrop={handleDropResume}
+                          isDragging={isDraggingResume}
+                          files={resumeFiles}
+                          title="Drag & Drop here (PDF/DOCX)"
+                          inputRef={resumeInputRef}
+                          type="Resume"
+                        />
+                        <TextField
+                          multiline
+                          rows={5}
+                          value={resumeText}
+                          onChange={(e) => setResumeText(e.target.value)}
+                          placeholder="Enter Resume here"
+                          fullWidth
+                        />
+                      </Stack>
+                    </Paper>
+
+                    {/* Job Description Section */}
+                    <Paper elevation={2} sx={{ p: 3 }}>
+                      <Stack spacing={2}>
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                          <UploadFileIcon color="primary" />
+                          <Typography
+                            variant="caption"
+                            color="textPrimary"
+                            sx={{ fontWeight: "bold", fontSize: '13px' }}
+                          >
+                            Upload Job Description
+                          </Typography>
+                        </Stack>
+                        <DropZone
+                          onDragEnter={(e) => handleDrag(e, setIsDraggingJobDesc)}
+                          onDragLeave={(e) => handleDrag(e, setIsDraggingJobDesc)}
+                          onDragOver={(e) => handleDrag(e, setIsDraggingJobDesc)}
+                          onDrop={handleDropJobDesc}
+                          isDragging={isDraggingJobDesc}
+                          files={jobDescFiles}
+                          title="Drag & Drop here (PDF/DOCX)"
+                          inputRef={jobDescInputRef}
+                          type="Job Description"
+                        />
+                        <TextField
+                          multiline
+                          rows={5}
+                          value={jobDescText}
+                          onChange={(e) => setJobDescText(e.target.value)}
+                          placeholder="Enter Job description here"
+                          fullWidth
+                        />
+                      </Stack>
+                    </Paper>
+
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      disabled={!resumeText || !jobDescText}
                       fullWidth
-                    />
-                  </Stack>
-                </Paper>
+                    >
+                      START INTERVIEW NOW
+                    </Button>
 
-                {/* Job Description Section */}
-                <Paper elevation={2} sx={{ p: 3 }}>
-                  <Stack spacing={2}>
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                      <UploadFileIcon color="primary" />
-                      <Typography
-                        variant="caption"
-                        color="textPrimary"
-                        sx={{ fontWeight: "bold", fontSize: '13px' }}
-                      >
-                        Upload Job Description
-                      </Typography>
-                    </Stack>
-                    <DropZone
-                      onDragEnter={(e) => handleDrag(e, setIsDraggingJobDesc)}
-                      onDragLeave={(e) => handleDrag(e, setIsDraggingJobDesc)}
-                      onDragOver={(e) => handleDrag(e, setIsDraggingJobDesc)}
-                      onDrop={handleDropJobDesc}
-                      isDragging={isDraggingJobDesc}
-                      files={jobDescFiles}
-                      title="Drag & Drop here (PDF/DOCX)"
-                      inputRef={jobDescInputRef}
-                      type="Job Description"
-                    />
-                    <TextField
-                      multiline
-                      rows={5}
-                      value={jobDescText}
-                      onChange={(e) => setJobDescText(e.target.value)}
-                      placeholder="Enter Job description here"
+                    <Button
+                      variant="contained"
+                      disabled={!resumeText || !jobDescText}
                       fullWidth
-                    />
+                      onClick={handleDialogOpen}
+                    >
+                      SAVE SESSION
+                    </Button>
+
+                    <Container margin="20px" />
+
                   </Stack>
-                </Paper>
+                </form>
 
-                <Button
-                  type="submit"
-                  variant="contained"
-                  disabled={!resumeText || !jobDescText}
-                  fullWidth
-                >
-                  START INTERVIEW NOW
-                </Button>
+                {/* Loading Dialog */}
+                <Dialog open={loading}>
+                  <DialogContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <CircularProgress />
+                    <Typography>{loadingMessage}</Typography>
+                  </DialogContent>
+                </Dialog>
 
-                <Button
-                  variant="contained"
-                  disabled={!resumeText || !jobDescText}
-                  fullWidth
-                  onClick={handleDialogOpen}
-                >
-                  SAVE SESSION
-                </Button>
-
-                <Container margin="20px" />
-
-              </Stack>
-            </form>
-
-            {/* Loading Dialog */}
-            <Dialog open={loading}>
-              <DialogContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <CircularProgress />
-                <Typography>{loadingMessage}</Typography>
-              </DialogContent>
-            </Dialog>
-
-            <CandidateFormDialog
-              open={openDialog}
-              onClose={handleDialogClose}
-              resume={resumeText}
-              jobDesc={jobDescText} />
-          </Box>
+                <CandidateFormDialog
+                  open={openDialog}
+                  onClose={handleDialogClose}
+                  resume={resumeText}
+                  jobDesc={jobDescText} />
+              </Box>
+            </Container>
+          </Stack>
         </Container>
       </Stack>
-    </ThemeProvider>
+    </ThemeProvider >
   );
 }

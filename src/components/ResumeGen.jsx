@@ -119,10 +119,10 @@ const DataTable = ({ data, onView, onDelete }) => (
                                 <TableCell sx={{ padding: "4px 8px" }}><Typography fontSize={"14px"}>{item.created}</Typography></TableCell>
                                 <TableCell sx={{ padding: "4px 8px" }}>
                                     <IconButton
-                                        color="secondary"
                                         onClick={() => onView(item.id)}
                                         aria-label="View"
                                         size="small"
+                                        sx={{ color: "#00AEEF" }}
                                     >
                                         <RemoveRedEyeOutlinedIcon fontSize="small" />
                                     </IconButton>
@@ -521,6 +521,27 @@ const ResumeGenerator = ({ setIsAuthenticated }) => {
                             <DonutSmallIcon sx={{ color: 'black' }} />
                         </IconButton>
 
+                        <Typography variant="title"
+                            component="div"
+                            sx={{
+                                flexGrow: 1,
+                                fontWeight: 'bold',
+                                marginLeft: '10px',
+                                color: '#00AEEF'
+                            }}>
+                            TITLE
+                        </Typography>
+
+                        <Typography
+                            sx={{
+                                flexGrow: 1,
+                                alignContent: "center",
+                                fontSize: 14,
+                                color: '#000000',
+                            }}>
+                            RESUME BUILDER
+                        </Typography>
+
                         {/* Right side: Logout Button */}
                         {!isMobile && (
                             <Button edge="end" color="inherit" variant="outlined"
@@ -550,7 +571,7 @@ const ResumeGenerator = ({ setIsAuthenticated }) => {
                                     <Paper elevation={2} sx={{ p: 3 }}>
                                         <Stack spacing={2}>
                                             <Stack direction="row" alignItems="center" spacing={1}>
-                                                <UploadFileIcon color="secondary" />
+                                                <UploadFileIcon sx={{ color: "#00AEEF" }} />
                                                 <TypographyHeader>Upload Job Description</TypographyHeader>
                                             </Stack>
 
@@ -579,7 +600,7 @@ const ResumeGenerator = ({ setIsAuthenticated }) => {
                                             />
 
                                             <Stack direction="row" alignItems="center" spacing={1}>
-                                                <UploadFileIcon color="secondary" />
+                                                <UploadFileIcon sx={{ color: "#00AEEF" }} />
                                                 <TypographyHeader>Enter Competitors</TypographyHeader>
                                             </Stack>
 
@@ -635,7 +656,7 @@ const ResumeGenerator = ({ setIsAuthenticated }) => {
                             </Dialog>
                         </Box>
 
-                        <Container>
+                        <Container sx={{ backgroundColor: "#FAFAFA" }}>
                             <Stack direction={"column"} marginTop={"20px"}>
                                 <DataTable
                                     data={tableData}
@@ -643,7 +664,7 @@ const ResumeGenerator = ({ setIsAuthenticated }) => {
                                     onDelete={handleDelete}
                                 />
                                 <Typography alignContent="center" fontSize={"14px"} sx={{ fontWeight: "bold", mt: 2, ml: 1, mb: 0 }}>
-                                    Resume Preview
+                                    Resume Preview will be Displayed here
                                 </Typography>
                                 {showPreview && (
                                     <Box sx={{ mt: 3 }}>

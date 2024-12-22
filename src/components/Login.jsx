@@ -75,16 +75,18 @@ const Login = ({ setIsAuthenticated }) => {
       // Store tokens securely
       localStorage.setItem('access_token', data.access_token);
       localStorage.setItem('client_id', data.client_id);
+      localStorage.setItem("refreshToken", data.refresh_token);
 
       setIsAuthenticated(true);
       navigate('/landing');
     } catch (error) {
-      setError(error.message || 'An error occurred during login. Please try again.');
+      setError(("Error during Login: " + error.message) || 'An error occurred during login. Please try again.');
       console.error('Login error:', error);
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <ThemeProvider theme={lightTheme}>

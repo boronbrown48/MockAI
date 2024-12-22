@@ -173,8 +173,6 @@ const Chatbot = ({ setIsAuthenticated }) => {
 
     const handleSendMessage = async () => {
         if (!inputMessage.trim()) return;
-
-        // console.log("Input Message:", inputMessage);
         setInputMessage(''); // Clear input immediately
         await sendMessage(inputMessage);
     }
@@ -187,7 +185,6 @@ const Chatbot = ({ setIsAuthenticated }) => {
     }, [messages]);
 
     const renderMessageContent = (content) => {
-        // console.log("renderMessageContent:", content);
         const parts = extractCodeBlocks(content);
 
         return (
@@ -195,7 +192,7 @@ const Chatbot = ({ setIsAuthenticated }) => {
                 {parts.map((part, index) => {
                     if (part.type === 'text') {
                         return (
-                            <Typography key={index} variant="body2" className="radley-regular" color="#000000" style={{ lineHeight: "34px" }}>
+                            <Typography key={index} fontSize={"16px"} className="radley-regular" color="#000000" style={{ lineHeight: "34px" }}>
                                 {formatContent(part.content)}
                             </Typography>
                         );
@@ -212,7 +209,6 @@ const Chatbot = ({ setIsAuthenticated }) => {
 
     // Function to format content and convert bold text
     const formatContent = (content) => {
-        // console.log("formatContent:", content);
         // Split content by new lines
         return content.split('\n').map((line, lineIndex) => (
             <React.Fragment key={lineIndex}>
@@ -289,21 +285,6 @@ const Chatbot = ({ setIsAuthenticated }) => {
 
                         {/* Box to hold the timer and buttons in the center */}
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexGrow: 1 }}>
-                            {/* Timer with rounded border */}
-                            <Typography
-                                style={{
-                                    padding: '5px 15px', // Padding inside the timer container
-                                    borderRadius: '20px', // Rounded corners
-                                    border: '1px solid grey', // Border around the timer
-                                    minWidth: '60px', // Ensure a minimum width for the timer container
-                                    textAlign: 'center', // Center the time text
-                                }}
-                                fontSize={'16px'}
-                                color="black"
-                            >
-                                {formatTime(timer)}
-                            </Typography>
-
                             {/* Record Button */}
                             <Button
                                 variant="outlined"
@@ -402,10 +383,11 @@ const Chatbot = ({ setIsAuthenticated }) => {
                                                 paddingRight: 2,
                                                 paddingTop: 1,
                                                 paddingBottom: 1,
+                                                marginRight: 2,
                                                 borderRadius: 2,
                                             }}
                                         >
-                                            {renderMessageContent(message.content)}
+                                            {message.content !== "Thank you." && renderMessageContent(message.content)}
                                         </Box>
                                     </ListItem>
                                 </React.Fragment>

@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { Divider } from '@mui/material';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
@@ -13,7 +14,7 @@ const items = [
     icon: <SettingsSuggestRoundedIcon sx={{ color: 'text.secondary' }} />,
     title: 'Candidate\'s Resume',
     description:
-      'Please upload candidate to train the AI further to get accurate answers',
+      'Please upload resume to train the AI further to get accurate answers',
   },
   {
     icon: <ConstructionRoundedIcon sx={{ color: 'text.secondary' }} />,
@@ -25,7 +26,7 @@ const items = [
     icon: <ThumbUpAltRoundedIcon sx={{ color: 'text.secondary' }} />,
     title: 'Upload Job Description',
     description:
-      'Please upload the Job Description for the upcoming Interview for tailored answers',
+      'Job Description will be a guide for AI in Interview for tailored answers',
   },
   {
     icon: <AutoFixHighRoundedIcon sx={{ color: 'text.secondary' }} />,
@@ -38,15 +39,18 @@ const items = [
 export default function LandingContent() {
   return (
     <Stack
-      sx={{ flexDirection: 'column', alignSelf: 'top', gap: 4, maxWidth: 600, marginRight: 5 }}
-    >
-      <Box sx={{ display: { xs: 'none', md: 'flex' }, marginTop: '30px' }}>
+      sx={{ flexDirection: 'column', gap: 4, maxWidth: 600, marginLeft: 5 }}>
+      <Box sx={{ display: { xs: 'none', md: 'flex' }, marginTop: '60px' }}>
       </Box>
+      <Typography sx={{ fontWeight: 'bold', fontSize: 14 }}>
+        USAGE INSTRUCTIONS
+      </Typography>
+      {/* <Divider orientation="horizontal" maxWidth="20px" flexItem /> */}
       {items.map((item, index) => (
         <Stack key={index} direction="row" sx={{ gap: 2, alignContent: 'left', justifyContent: 'left' }}>
           {item.icon}
           <div>
-            <Typography gutterBottom sx={{ fontWeight: 'medium' }}>
+            <Typography gutterBottom sx={{ fontWeight: 'bold', fontSize: 14 }}>
               {item.title}
             </Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>

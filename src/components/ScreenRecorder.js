@@ -76,11 +76,6 @@ const useScreenRecorder = () => {
 
     mediaRecorder.onstop = async () => {
       const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-      // const url = URL.createObjectURL(blob);
-      // const videoElement = document.createElement("video");
-      // videoElement.src = url;
-      // videoElement.controls = true;
-      // document.body.appendChild(videoElement);
 
       // Clear the chunks array after each stop to prevent reusing old audio
       chunksRef.current = [];
@@ -126,28 +121,12 @@ const useScreenRecorder = () => {
           !silenceDetected &&
           currentTime - lastNonSilentTime >= silenceTimeout
         ) {
-          console.log(
-            "[2] currentTime = " +
-              currentTime +
-              " || lastNonSilentTime = " +
-              lastNonSilentTime +
-              " || Silence Detected: " +
-              silenceDetected
-          );
           silenceDetected = true;
           console.log("Silence detected, stopping recording...");
           mediaRecorder.stop();
         }
       } else {
         if (silenceDetected) {
-          console.log(
-            "[3] currentTime = " +
-              currentTime +
-              " || lastNonSilentTime = " +
-              lastNonSilentTime +
-              "  || Silence Detected: " +
-              silenceDetected
-          );
           silenceDetected = false;
           console.log("Audio resumed, restarting recording...");
           mediaRecorder.start();
@@ -164,8 +143,10 @@ const useScreenRecorder = () => {
 
   const handleSilenceDetected = async (blob) => {
     try {
-      const transcriptionText = await transcribeAudioFile(blob);
-      setTranscription(transcriptionText); // Update transcription state
+      if (blob.size > 20000) {
+        const transcriptionText = await transcribeAudioFile(blob);
+        setTranscription(transcriptionText); // Update transcription state
+      }
     } catch (error) {
       console.error("Error in transcription:", error);
     }
@@ -278,8 +259,11 @@ const useScreenRecorder = () => {
         language: "en",
         temperature: 0.0,
       });
-
-      return transcription.text;
+      if (transcription.text !== "Thank you.") {
+        return transcription.text;
+      } else {
+        return "";
+      }
     } catch (error) {
       throw new Error("Transcription error: " + error.message);
     }
